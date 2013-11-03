@@ -1,0 +1,54 @@
+html, body
+{
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Lucida Grande',Geneva,Arial,Verdana,sans-serif;
+}
+.nonbold-header-text
+{
+  margin: 0;
+  padding: 6px;
+  border:0;
+}
+.header-text
+{
+  margin: 0;
+  padding: 6px;
+  border:0;
+  font-size: 20pt;
+}
+.header-size-control
+{
+  font-size: x-large;
+}
+.header
+{
+  position: fixed;
+  top: 10px;
+  left: 50px;
+  right: 10px;
+}
+#minus-sign
+{
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+#mini-header
+{
+  display: none; /* Default on load */
+}
+#header
+{
+  padding: 0;
+  background-color: #aaa;
+  border: 1px solid #888;
+  opacity: 0.6;
+}
+#map
+{
+  height: 100%;
+  width: 100%;
