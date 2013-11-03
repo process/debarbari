@@ -11,10 +11,10 @@ function debarbariInit() {
       }
     );
 
-    $("#id").click(function () { 
+    $(".dl").click(function () { 
       this.href = getData(); 
       setTimeout(function() { 
-        $("#id").attr("href", "#");
+        $("#dl").attr("href", "#");
       }, 100); 
     });
 
@@ -26,7 +26,6 @@ function debarbariInit() {
     L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 13, tms: true}).addTo(map);
   });
 }
-
 
 function getData() {
   var c = document.createElement("canvas");
