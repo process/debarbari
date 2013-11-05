@@ -1,3 +1,47 @@
+var map;
+
+var churches = [
+  ["Church of San Nicolò dei Mendicoli", [-72.63993, 22875.55664], 7],
+  ["Church of San Giacomo dell'Orio", [-67.11875, 22924.90723], 7],
+  ["Church of Sant'Alvise", [-62.69431, 22940.04639], 7],
+  ["Church of Santo Stefano", [-74.13408, 22916.67847], 6],
+  ["Church of Santa Maria Gloriosa dei Frari", [-69.51915, 22913.10791], 6],
+  ["Church of the Carmini", [-72.73148, 22894.9585], 7],
+  ["Church of San Giobbe", [-62.84512, 22906.74683], 7],
+  ["Church of Angelo Raffaele", [-72.90026, 22884.79614], 7],
+  ["Church of San Pantalon", [-70.54686, 22904.24194], 7],
+  ["Church of San Giacomo at Rialto", [-69.75616, 22947.4292], 7],
+  ["Church of Santi Maria e Donato", [-61.90793, 23002.37183], 7],
+  ["Church of Madonna dell'Orto", [-63.77278, 22946.90186], 7],
+  ["Church of S. Michele in Isola", [-64.97936, 22987.13379], 7],
+  ["Church of Santa Maria dei Miracoli", [-70.24832, 22967.89673], 7],
+  ["Church of Santi Apostoli", [-68.39109, 22958.33862], 7],
+  ["Church of SS. Giovanni e Paolo", [-70.71447, 22981.97021], 6],
+  ["Church of Santa Maria Formosa", [-73.6154, 22976.09253], 7],
+  ["Church of San Giovanni Crisostomo", [-69.72191, 22959.77783], 7],
+  ["Church of San Salvatore", [-72.7119, 22953.41675], 7],
+  ["San Francesco della Vigna", [-72.47528, 23009.63379], 6],
+  ["Church of San Lorenzo", [-74.13408, 22998.27393], 6],
+  ["Church of Sant'Agnese", [-76.16925, 22889.68506], 7],
+  ["Former Church of San Gregorio", [-77.71627, 22914.93164], 6],
+  ["Former Church of the Carità", [-74.48466, 22899.6936], 7],
+  ["Church of the San Fantin", [-75.79403, 22932.58667], 7], /* Correct? */
+  ["Church of San Giovanni in Bragora", [-76.94545, 23009.74365], 6],
+  ["Church of San Zaccaria", [-76.52706, 22992.49512], 6],
+  ["Church of San Martino near Arsenale", [-77.57523, 23024.23462], 7],
+  ["Church of San Giorgio Maggiore and Cloister of the Cipressi", [-81.43359, 22974.36768], 6],
+  ["Saint Mark's Basilica", [-76.05321, 22967.18262], 7],
+  ["Church of San Pietro di Castello", [-76.58836, 23070.73975], 6]
+]
+
+function findData(list, val) {
+  for (var i = 0; i < list.length; i++) {
+    if (list[i][0] == val) return list[i];
+  }
+
+  return null;
+}
+
 function debarbariInit() {
   // jQuery init
   $(function() {
@@ -20,10 +64,18 @@ function debarbariInit() {
 
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
+
+    // Initialize search
+    var churchNames = churches.map(function (e) { return e[0]; });
+    $(".search").autocomplete({ source: churchNames });
+    $(".search").on("autocompleteselect", function (event, ui) {
+      var church = findData(churches, ui.item.value);
+      map.setView(church[1], church[2], { animate: true });
+    });
     
     // Initialize leaflet map
-    var map = L.map('map', { center: [-73, 22973.5], zoom: 3 });
-    L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 13, tms: true}).addTo(map);
+    map = L.map('map', { center: [-73, 22973.5], zoom: 3 });
+    L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
   });
 }
 
