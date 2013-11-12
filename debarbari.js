@@ -76,7 +76,8 @@ function debarbariInit() {
     });
     
     // Initialize leaflet map
-    map = L.map('map', { center: [-73, 22973.5], zoom: 3 });
+    map = L.map('map', { center: [-73, 22973.5], zoom: 3, attributionControl: false });
+    new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
     L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
     var tms2 = L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
