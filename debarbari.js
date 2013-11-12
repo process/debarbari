@@ -62,6 +62,8 @@ function debarbariInit() {
       }, 100); 
     });
 
+    $("#select").click(startDrawMode);
+
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
 
@@ -157,7 +159,12 @@ function endRect(event) {
   canvas.height = height;
   ctx.putImageData(selection, 0, 0);
 
-  window.open(canvas.toDataURL("image/png"));
+  var link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+  link.download = "debarbari.png";
+  var theEvent = document.createEvent("MouseEvent");
+  theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+  link.dispatchEvent(theEvent);
 }
 
 function startDrawMode() {
