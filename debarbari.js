@@ -76,10 +76,13 @@ function debarbariInit() {
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 22973.5], zoom: 3 });
     L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
+
+    var tms2 = L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
+    var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
   });
 }
 
-function getData() {
+function getCanvasFromMap() {
   var c = document.createElement("canvas");
   c.width = $("#map").width();
   c.height = $("#map").height();
@@ -94,6 +97,12 @@ function getData() {
 
     canvas.drawImage(img, rect.left, rect.top);
   }
+
+  return c;
+}
+
+function getData() {
+  var c = getCanvasFromMap();
 
   var img_url = c.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
   return img_url;
@@ -114,4 +123,45 @@ function showHeader() {
 
   $("#mini-header").css({display: "none"});
   $("#header").animate({height: autoHeight, width: autoWidth}, 250);
+}
+
+var rectX, rectY;
+
+function startRect(event) {
+  $(".rect-canvas").append('<div class="rect"></div>');
+  rectX = event.clientX;
+  rectY = event.clientY;
+  $(".rect").css({ top: rectY, left: rectX });
+  $(".rect-canvas").mousemove(updateRect);
+}
+
+function updateRect(event) {
+  $(".rect").css({ width: (event.clientX - rectX)+"px", height: (event.clientY - rectY)+"px"});
+}
+
+function endRect(event) {
+  var x = rectX;
+  var y = rectY;
+  var width = $(".rect").css("width").slice(0, -2);
+  var height = $(".rect").css("height").slice(0, -2);
+
+  $(".rect").remove();
+  $(".rect-canvas").remove();
+
+  // GET IMAGE
+  var canvas = getCanvasFromMap();
+  var ctx = canvas.getContext('2d');
+
+  var selection = ctx.getImageData(x, y, width, height);
+  canvas.width = width;
+  canvas.height = height;
+  ctx.putImageData(selection, 0, 0);
+
+  window.open(canvas.toDataURL("image/png"));
+}
+
+function startDrawMode() {
+  $("body").append('<div class="rect-canvas"></div>');
+  $(".rect-canvas").mousedown(startRect)
+  $(".rect-canvas").mouseup(endRect)
 }
