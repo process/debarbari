@@ -19,8 +19,8 @@ var churches = [
   ["Church of SS. Giovanni e Paolo", [-70.71447, 22981.97021], 6],
   ["Church of Santa Maria Formosa", [-73.6154, 22976.09253], 7],
   ["Church of San Giovanni Crisostomo", [-69.72191, 22959.77783], 7],
-  ["Church of San Salvatore", [-72.7119, 22953.41675], 7],
-  ["San Francesco della Vigna", [-72.47528, 23009.63379], 6],
+  ["Former Convent of San Salvador", [-72.7119, 22953.41675], 7],
+  ["Convent of San Francesco della Vigna", [-72.47528, 23009.63379], 6],
   ["Church of San Lorenzo", [-74.13408, 22998.27393], 6],
   ["Church of Sant'Agnese", [-76.16925, 22889.68506], 7],
   ["Former Church of San Gregorio", [-77.71627, 22914.93164], 6],
@@ -30,8 +30,82 @@ var churches = [
   ["Church of San Zaccaria", [-76.52706, 22992.49512], 6],
   ["Church of San Martino near Arsenale", [-77.57523, 23024.23462], 7],
   ["Church of San Giorgio Maggiore and Cloister of the Cipressi", [-81.43359, 22974.36768], 6],
-  ["Saint Mark's Basilica", [-76.05321, 22967.18262], 7],
+  ["Basilica of Saint Mark", [-76.05321, 22967.18262], 7],
   ["Church of San Pietro di Castello", [-76.58836, 23070.73975], 6]
+];
+
+var demolishedChurches = [
+  ["Church of Corpus Domini", [-69.1018992122562, 22891.31103515625], 7],
+  ["Church of Santa Lucia", [-67.92720481451185, 22896.23291015625], 7],
+  /*["Convent of the Crociferi????????", [-67.08668927672144, 22971.533203125], 7]*/
+  []
+];
+
+var repurposedChurches = [
+  ["Church of San Vidal", [-74.48760078108175, 22912.6904296875], 7]
+];
+
+var bridges = [
+  ["Ponte de la Croze", [-82.85133180485437, 22913.27270507812], 7]
+];
+
+var demolishedChurchColors = [
+  [ /* Corpus Domini */
+    [-69.9830151028733, 22888.883056640625],
+    [-69.51145744782765, 22891.607666015625],
+    [-69.36483123672544, 22891.541748046875],
+    [-69.26393034602106, 22892.113037109375],
+    [-69.18599349954394, 22892.069091796875],
+    [-69.22499685411589, 22892.178955078125],
+    [-69.18599349954394, 22892.552490234375],
+    [-68.88727366584355, 22892.530517578125],
+    [-68.60852084639887, 22890.882568359375],
+    [-68.6325507815757, 22890.640869140625],
+    [-68.52823492039876, 22890.61889648437],
+    [-68.47186403726953, 22890.37719726562],
+    [-68.52823492039876, 22890.113525390625],
+    [-68.51214331858071, 22890.003662109375],
+    [-68.5443150407769, 22888.619384765625],
+    [-68.65655498475735, 22888.201904296875],
+    [-69.58056349224897, 22887.301025390625],
+    [-69.52683366454718, 22887.608642578125],
+    [-69.55755297124296, 22887.85034179687]
+  ],
+  [ /* Santa Lucia */
+    [-68.48395536734631, 22896.046142578125],
+    [-68.53225602660771, 22896.199951171875],
+    [-68.27345405495296, 22897.36450195312],
+    [-68.05278304131106, 22897.342529296875],
+    [-68.10200447389143, 22897.474365234375],
+    [-67.92926896758328, 22898.11157226562],
+    [-67.59666247714624, 22898.089599609375],
+    [-67.29325646952465, 22896.199951171875],
+    [-67.29325646952465, 22895.84838867187],
+    [-67.62177205521934, 22894.354248046875],
+    [-67.6969406930543, 22894.83764648437],
+    [-67.67191113958987, 22894.947509765625],
+    [-67.80509469602548, 22896.024169921875]
+  ]
+];
+
+var bridgeColors = [
+  [ /* Ponte de la Croze */
+    [-82.89970337643459, 22912.6025390625],
+    [-82.87249197680256, 22912.646484375],
+    [-82.85064817916859, 22912.80029296875],
+    [-82.83422163810538, 22913.10791015625],
+    [-82.82873778533543, 22913.41552734375],
+    [-82.83970131925237, 22913.701171875],
+    [-82.86976513726212, 22913.942871093746],
+    [-82.90241882535476, 22914.0087890625],
+    [-82.84791302601151, 22914.2724609375],
+    [-82.83696199993649, 22914.536132812496],
+    [-82.80125583766977, 22914.51416015625],
+    [-82.79023374767752, 22913.96484375],
+    [-82.78747560323012, 22913.437499999996],
+    [-82.79574688944791, 22912.97607421875],
+    [-82.80400874018102, 22912.514648437496]
+  ]
 ]
 
 function findData(list, val) {
@@ -62,16 +136,25 @@ function debarbariInit() {
       }, 100); 
     });
 
-    $("#select").click(startDrawMode);
+    $("#select").click(startDrawMode.bind(this, downloadSection));
 
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
 
     // Initialize search
     var churchNames = churches.map(function (e) { return e[0]; });
+    for (var i = 0; i < demolishedChurches.length; ++i) {
+      churchNames.push(demolishedChurches[i][0]);
+    }
+    for (var i = 0; i < repurposedChurches.length; ++i) {
+      churchNames.push(repurposedChurches[i][0]);
+    }
+    for (var i = 0; i < bridges.length; ++i) {
+      churchNames.push(bridges[i][0]);
+    }
     $(".search").autocomplete({ source: churchNames });
     $(".search").on("autocompleteselect", function (event, ui) {
-      var church = findData(churches, ui.item.value);
+      var church = findData(churches, ui.item.value) || findData(repurposedChurches, ui.item.value) || findData(demolishedChurches, ui.item.value) || findData(bridges, ui.item.value);
       map.setView(church[1], church[2], { animate: true });
     });
     
@@ -128,30 +211,7 @@ function showHeader() {
   $("#header").animate({height: autoHeight, width: autoWidth}, 250);
 }
 
-var rectX, rectY;
-
-function startRect(event) {
-  $(".rect-canvas").append('<div class="rect"></div>');
-  rectX = event.clientX;
-  rectY = event.clientY;
-  $(".rect").css({ top: rectY, left: rectX });
-  $(".rect-canvas").mousemove(updateRect);
-}
-
-function updateRect(event) {
-  $(".rect").css({ width: (event.clientX - rectX)+"px", height: (event.clientY - rectY)+"px"});
-}
-
-function endRect(event) {
-  var x = rectX;
-  var y = rectY;
-  var width = $(".rect").css("width").slice(0, -2);
-  var height = $(".rect").css("height").slice(0, -2);
-
-  $(".rect").remove();
-  $(".rect-canvas").remove();
-
-  // GET IMAGE
+function downloadSection(x, y, width, height) {
   var canvas = getCanvasFromMap();
   var ctx = canvas.getContext('2d');
 
@@ -168,8 +228,122 @@ function endRect(event) {
   link.dispatchEvent(theEvent);
 }
 
-function startDrawMode() {
+function addRect(x, y, width, height) {
+  var mapBounds = map.getBounds();
+
+  var mapWidth = (mapBounds.getEast() - mapBounds.getWest()) * (width / window.innerWidth);
+  var mapHeight = (mapBounds.getNorth() - mapBounds.getSouth()) * (height / window.innerHeight);
+
+  var mapLng = ((mapBounds.getEast() - mapBounds.getWest()) * (x / window.innerWidth)) + mapBounds.getWest();
+  var mapLat = ((mapBounds.getNorth() - mapBounds.getSouth()) * (y / window.innerHeight)) + mapBounds.getSouth();
+
+  var rectBounds = [[mapLat+mapHeight, mapLng], [mapLat, mapLng+mapWidth]];
+  new L.rectangle(rectBounds, {fillColor: "#ff7800", weight: 1}).addTo(map);
+  console.log(rectBounds.toString());
+}
+
+// Draw poly
+var points = [];
+var markers = [];
+
+var circleIcon = L.icon({
+  // lol...
+  iconUrl: "http://www.rand.org/content/dam/rand/www/external/pubs/research_briefs/RB9385/images/circle1.gif", 
+  iconSize: [12, 12],
+  iconAnchor: [6, 6]
+});
+
+function addPoint(event) {
+  var marker = new L.Marker(event.latlng, {icon: circleIcon});
+  marker.addTo(map);
+  markers.push(marker);
+  points.push(event.latlng);
+}
+
+function startPolyMode() {
+  map.on('click', addPoint);
+}
+
+function endPolyMode() {
+  L.polygon(points).addTo(map);
+  map.off('click', addPoint);
+
+  for (var i = 0; i < points.length; ++i) {
+    console.log('['+points[i].lat+', '+points[i].lng+']');
+  }
+
+  points = [];
+  for (var i = 0; i < markers.length; ++i) {
+    map.removeLayer(markers[i]);
+  }
+  markers = []
+}
+
+// Download rect
+var rectX, rectY;
+var latlngStart, latlngEnd;
+
+function startRect(event) {
+  $(".rect-canvas").append('<div class="rect"></div>');
+  rectX = event.clientX;
+  rectY = event.clientY;
+  $(".rect").css({ top: rectY, left: rectX });
+  $(".rect-canvas").mousemove(updateRect);
+}
+
+function updateRect(event) {
+  var xDiff = event.clientX - rectX;
+  var yDiff = event.clientY - rectY;
+
+  var newX, newY, newWidth, newHeight;
+
+  if (xDiff < 0) {
+    newWidth = Math.abs(xDiff);
+    newX = rectX - newWidth;
+  }
+  else {
+    newX = rectX;
+    newWidth = xDiff;
+  }
+
+  if (yDiff < 0) {
+    newHeight = Math.abs(yDiff);
+    newY = rectY - newHeight;
+  }
+  else {
+    newY = rectY;
+    newHeight = yDiff;
+  }
+
+  $(".rect").css({ left: newX+"px", top: newY+"px", width: newWidth+"px", height: newHeight+"px"});
+}
+
+function endRect(callback, event) {
+  var x = $(".rect").css("left").slice(0, -2);;
+  var y = $(".rect").css("top").slice(0, -2);;
+  var width = $(".rect").css("width").slice(0, -2);
+  var height = $(".rect").css("height").slice(0, -2);
+
+  $(".rect").remove();
+  $(".rect-canvas").remove();
+
+  callback(x, y, width, height);
+}
+
+function startDrawMode(callback) {
   $("body").append('<div class="rect-canvas"></div>');
   $(".rect-canvas").mousedown(startRect)
-  $(".rect-canvas").mouseup(endRect)
+  $(".rect-canvas").mouseup(endRect.bind(this, callback))
+}
+
+// Enable layers
+function showDemolishedChurches() {
+  for (var i = 0; i < demolishedChurchColors.length; ++i) {
+    L.polygon(demolishedChurchColors[i]).addTo(map);
+  }
+}
+
+// UTIL
+function record(name) {
+    console.log('["' + name + '", [' + map.getCenter().lat + ', ' + map.getCenter().lng + '], ' + map.getZoom() + ']');
 }
