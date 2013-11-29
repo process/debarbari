@@ -36,9 +36,8 @@ var churches = [
 
 var demolishedChurches = [
   ["Church of Corpus Domini", [-69.1018992122562, 22891.31103515625], 7],
-  ["Church of Santa Lucia", [-67.92720481451185, 22896.23291015625], 7],
+  ["Church of Santa Lucia", [-67.92720481451185, 22896.23291015625], 7]
   /*["Convent of the Crociferi????????", [-67.08668927672144, 22971.533203125], 7]*/
-  []
 ];
 
 var repurposedChurches = [
@@ -141,6 +140,9 @@ function debarbariInit() {
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
 
+    $("#churches-layer").click(toggleChurchLayer);
+    $("#bridges-layer").click(toggleBridgeLayer);
+
     // Initialize search
     var churchNames = churches.map(function (e) { return e[0]; });
     for (var i = 0; i < demolishedChurches.length; ++i) {
@@ -155,7 +157,7 @@ function debarbariInit() {
     $(".search").autocomplete({ source: churchNames });
     $(".search").on("autocompleteselect", function (event, ui) {
       var church = findData(churches, ui.item.value) || findData(repurposedChurches, ui.item.value) || findData(demolishedChurches, ui.item.value) || findData(bridges, ui.item.value);
-      map.setView(church[1], church[2], { animate: true });
+      map.setView(church[1], 8 /* LOL IGNORE ZOOM */, { animate: true });
     });
     
     // Initialize leaflet map
@@ -337,9 +339,39 @@ function startDrawMode(callback) {
 }
 
 // Enable layers
-function showDemolishedChurches() {
-  for (var i = 0; i < demolishedChurchColors.length; ++i) {
-    L.polygon(demolishedChurchColors[i]).addTo(map);
+var churchPolys = []
+function toggleChurchLayer() {
+  if (churchPolys.length == 0) {
+    for (var i = 0; i < demolishedChurchColors.length; ++i) {
+      var newPoly = L.polygon(demolishedChurchColors[i], {color: 'red'})
+      newPoly.addTo(map);
+      churchPolys.push(newPoly);
+    }
+  }
+  else {
+    for (var i = 0; i < demolishedChurchColors.length; ++i) {
+      map.removeLayer(churchPolys[i]);
+    }
+
+    churchPolys = [];
+  }
+}
+
+var bridgePolys = [];
+function toggleBridgeLayer() {
+  if (bridgePolys.length == 0) {
+    for (var i = 0; i < bridgeColors.length; ++i) {
+      var newPoly = L.polygon(bridgeColors[i])
+      newPoly.addTo(map);
+      bridgePolys.push(newPoly);
+    }
+  }
+  else {
+    for (var i = 0; i < bridgeColors.length; ++i) {
+      map.removeLayer(bridgePolys[i]);
+    }
+
+    bridgePolys = [];
   }
 }
 

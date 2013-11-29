@@ -13,6 +13,16 @@ html, body
   padding: 6px;
   border:0;
 }
+.icon
+{
+  height: 32px;
+  width: 32px;
+  vertical-align: middle;
+}
+.search
+{
+  width: 50%;
+}
 .header-text
 {
   margin: 0;
@@ -71,10 +81,11 @@ html, body
 }
 #mini-header
 {
-  display: none; /* Default on load */
+  display: block; /* Default on load */
 }
 #header
 {
+  display: none; /* Default on load */
   padding: 0;
   background-color: #bbb;
   border: 1px solid #888;
