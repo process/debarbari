@@ -135,7 +135,8 @@ function debarbariInit() {
       }, 100); 
     });
 
-    $("#select").click(startDrawMode.bind(this, downloadSection));
+    rectDrawer = new RectDrawer;
+    $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
 
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
@@ -163,9 +164,9 @@ function debarbariInit() {
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 22973.5], zoom: 3, attributionControl: false });
     new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
-    L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
+    L.tileLayer('tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
-    var tms2 = L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
+    var tms2 = L.tileLayer('tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
   });
 }
@@ -282,60 +283,62 @@ function endPolyMode() {
 }
 
 // Download rect
-var rectX, rectY;
-var latlngStart, latlngEnd;
+function RectDrawer() {
+  var rectX, rectY;
+  var latlngStart, latlngEnd;
 
-function startRect(event) {
-  $(".rect-canvas").append('<div class="rect"></div>');
-  rectX = event.clientX;
-  rectY = event.clientY;
-  $(".rect").css({ top: rectY, left: rectX });
-  $(".rect-canvas").mousemove(updateRect);
-}
+  this.endRect = function(callback, event) {
+    var x = $(".rect").css("left").slice(0, -2);;
+    var y = $(".rect").css("top").slice(0, -2);;
+    var width = $(".rect").css("width").slice(0, -2);
+    var height = $(".rect").css("height").slice(0, -2);
 
-function updateRect(event) {
-  var xDiff = event.clientX - rectX;
-  var yDiff = event.clientY - rectY;
+    $(".rect").remove();
+    $(".rect-canvas").remove();
 
-  var newX, newY, newWidth, newHeight;
-
-  if (xDiff < 0) {
-    newWidth = Math.abs(xDiff);
-    newX = rectX - newWidth;
-  }
-  else {
-    newX = rectX;
-    newWidth = xDiff;
+    callback(x, y, width, height);
   }
 
-  if (yDiff < 0) {
-    newHeight = Math.abs(yDiff);
-    newY = rectY - newHeight;
+  this.startRect = function(event) {
+    $(".rect-canvas").append('<div class="rect"></div>');
+    rectX = event.clientX;
+    rectY = event.clientY;
+    $(".rect").css({ top: rectY, left: rectX });
+    $(".rect-canvas").mousemove(this.updateRect);
   }
-  else {
-    newY = rectY;
-    newHeight = yDiff;
+
+  this.initialize = function(callback) {
+    $("body").append('<div class="rect-canvas"></div>');
+    $(".rect-canvas").mousedown(this.startRect.bind(this));
+    $(".rect-canvas").mouseup(this.endRect.bind(this, callback));
   }
 
-  $(".rect").css({ left: newX+"px", top: newY+"px", width: newWidth+"px", height: newHeight+"px"});
-}
+  this.updateRect = function(event) {
+    var xDiff = event.clientX - rectX;
+    var yDiff = event.clientY - rectY;
 
-function endRect(callback, event) {
-  var x = $(".rect").css("left").slice(0, -2);;
-  var y = $(".rect").css("top").slice(0, -2);;
-  var width = $(".rect").css("width").slice(0, -2);
-  var height = $(".rect").css("height").slice(0, -2);
+    var newX, newY, newWidth, newHeight;
 
-  $(".rect").remove();
-  $(".rect-canvas").remove();
+    if (xDiff < 0) {
+      newWidth = Math.abs(xDiff);
+      newX = rectX - newWidth;
+    }
+    else {
+      newX = rectX;
+      newWidth = xDiff;
+    }
 
-  callback(x, y, width, height);
-}
+    if (yDiff < 0) {
+      newHeight = Math.abs(yDiff);
+      newY = rectY - newHeight;
+    }
+    else {
+      newY = rectY;
+      newHeight = yDiff;
+    }
 
-function startDrawMode(callback) {
-  $("body").append('<div class="rect-canvas"></div>');
-  $(".rect-canvas").mousedown(startRect)
-  $(".rect-canvas").mouseup(endRect.bind(this, callback))
+    $(".rect").css({ left: newX+"px", top: newY+"px", width: newWidth+"px", height: newHeight+"px"});
+  }
 }
 
 // Enable layers

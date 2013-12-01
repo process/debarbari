@@ -4,15 +4,15 @@
     <meta charset="utf-8">
     <title>The de'Barbari Map</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
-    <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.1/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="mini/Control.MiniMap.css" />
-    <script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
-    <script src="mini/Control.MiniMap.js"></script>
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link rel="stylesheet" href="css/jquery-ui.css" />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="js/mini/Control.MiniMap.css" />
+    <script src="js/leaflet.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/mini/Control.MiniMap.js"></script>
     <script src="debarbari.js"></script>
     <script>debarbariInit();</script>
   </head>
@@ -24,8 +24,7 @@
     <span class="header-size-control" id="minus-sign">‒</span>
   </div>
   <div class="header" id="mini-header">
-    <label for="mini-search">Search: </label>
-    <input class="search" id="mini-search" />
+    <input class="search" id="mini-search" placeholder="Search..." />
     <a class="dl" download="debarbari.png" href="#"><img class="icon" src="filesave.png" /></a>
     <a id="select" href="#"><img class="icon" src="select.png" /></a>
     <div class="dropdown" style="display:inline;">
