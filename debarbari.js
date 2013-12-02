@@ -513,6 +513,18 @@ function debarbariInit() {
     $("#churches-layer").click(toggleChurchLayer);
     $("#bridges-layer").click(toggleBridgeLayer);
 
+    function showdrawicon() {
+      if(window.location.hash == '#color') {
+        $('#drawmode').css('display', 'inline');
+        $('#drawmode').click(togglePolyMode);
+      }
+      else {
+        $('#drawmode').css('display', 'none');
+      }
+    }
+    window.onhashchange = showdrawicon;
+    showdrawicon();
+
     // Initialize search
     var churchNames = churches_.map(function (e) { return e.name; });
     for (var i = 0; i < demolishedChurches.length; ++i) {
@@ -630,6 +642,18 @@ function addPoint(event) {
   marker.addTo(map);
   markers.push(marker);
   points.push(event.latlng);
+}
+
+var polymode = false;
+function togglePolyMode() {
+  if (polymode) {
+    endPolyMode();
+    polymode = false;
+  }
+  else {
+    startPolyMode();
+    polymode = true;
+  }
 }
 
 function startPolyMode() {
