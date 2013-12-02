@@ -484,6 +484,17 @@ function findData_(list, val) {
   return null;
 }
 
+function getAutoCompleteNames(datasets) {
+  churchNames = []
+  for (var i = 0; i < datasets.length; ++i) {
+    for (var j = 0; j < datasets[i].length; ++j) {
+      churchNames.push(datasets[i][j][0]);
+    }
+  }
+
+  return churchNames;
+}
+
 function debarbariInit() {
   // jQuery init
   $(function() {
@@ -526,16 +537,16 @@ function debarbariInit() {
     showdrawicon();
 
     // Initialize search
-    var churchNames = churches_.map(function (e) { return e.name; });
-    for (var i = 0; i < demolishedChurches.length; ++i) {
-      churchNames.push(demolishedChurches[i][0]);
-    }
-    for (var i = 0; i < repurposedChurches.length; ++i) {
-      churchNames.push(repurposedChurches[i][0]);
-    }
-    for (var i = 0; i < bridges.length; ++i) {
-      churchNames.push(bridges[i][0]);
-    }
+    var churchNames = getAutoCompleteNames([churches, demolishedChurches, repurposedChurches, bridges]); //churches_.map(function (e) { return e.name; });
+    // for (var i = 0; i < demolishedChurches.length; ++i) {
+    //   churchNames.push(demolishedChurches[i][0]);
+    // }
+    // for (var i = 0; i < repurposedChurches.length; ++i) {
+    //   churchNames.push(repurposedChurches[i][0]);
+    // }
+    // for (var i = 0; i < bridges.length; ++i) {
+    //   churchNames.push(bridges[i][0]);
+    // }
     $(".search").autocomplete({ source: churchNames });
     $(".search").on("autocompleteselect", function (event, ui) {
       var church = findData(churches, ui.item.value) || findData(repurposedChurches, ui.item.value) || findData(demolishedChurches, ui.item.value) || findData(bridges, ui.item.value);
@@ -753,11 +764,23 @@ function toggleChurchLayer() {
       newPoly.addTo(map);
       churchPolys.push(newPoly);
     }
+
+    $('#churches-layer').css('font-weight', 600);
+
+    var newsources = [demolishedChurches];
+    if (bridgePolys.length > 0) newsources.push(bridges);
+    $('.search').autocomplete({ source: getAutoCompleteNames(newsources) });
   }
   else {
     for (var i = 0; i < demolishedChurchColors.length; ++i) {
       map.removeLayer(churchPolys[i]);
     }
+
+    $('#churches-layer').css('font-weight', 400);
+
+    var newsources = [bridges];
+    if (bridgePolys.length == 0) newsources.push(demolishedChurches,churches,repurposedChurches);
+    $('.search').autocomplete({ source: getAutoCompleteNames(newsources) })
 
     churchPolys = [];
   }
@@ -771,11 +794,23 @@ function toggleBridgeLayer() {
       newPoly.addTo(map);
       bridgePolys.push(newPoly);
     }
+
+    $('#bridges-layer').css('font-weight', 600);
+
+    var newsources = [bridges];
+    if (churchPolys.length > 0) newsources.push(demolishedChurches);
+    $('.search').autocomplete({ source: getAutoCompleteNames(newsources) });
   }
   else {
     for (var i = 0; i < bridgeColors.length; ++i) {
       map.removeLayer(bridgePolys[i]);
     }
+
+    $('#bridges-layer').css('font-weight', 400);
+
+    var newsources = [demolishedChurches];
+    if (churchPolys.length == 0) newsources.push(bridges,churches,repurposedChurches);
+    $('.search').autocomplete({ source: getAutoCompleteNames(newsources) })
 
     bridgePolys = [];
   }
