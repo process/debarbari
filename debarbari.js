@@ -943,7 +943,7 @@ function debarbariInit() {
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 22973.5], zoom: 3, attributionControl: false });
     new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
-    L.tileLayer('tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
+    L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
     var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
@@ -1056,11 +1056,14 @@ function togglePolyMode() {
 
 function startPolyMode() {
   map.on('click', addPoint);
+  $('#drawmode>.icon').css('box-shadow','0 0 5px #fff');
 }
 
 function endPolyMode() {
   L.polygon(points).addTo(map);
   map.off('click', addPoint);
+
+  $('#drawmode>.icon').css('box-shadow','0 0 0');
 
   landmarkName = prompt("What is the name of this landmark?");
   var data = {points: points, name: landmarkName};
