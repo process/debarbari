@@ -1,4 +1,5 @@
 var map;
+var fb = new Firebase('https://debarbari.firebaseio.com/');
 
 var churches_ = [
   {
@@ -902,10 +903,18 @@ function debarbariInit() {
     $("#churches-layer").click(toggleChurchLayer);
     $("#bridges-layer").click(toggleBridgeLayer);
 
+    $('#drawmode').click(togglePolyMode);
+
+    $('#login-link').click(function () {
+      showLoginForm('login');
+    });
+    $('#signup-link').click(function () {
+      showLoginForm('signup');
+    })
+
     function showdrawicon() {
       if(window.location.hash == '#color') {
         $('#drawmode').css('display', 'inline');
-        $('#drawmode').click(togglePolyMode);
       }
       else {
         $('#drawmode').css('display', 'none');
@@ -936,7 +945,7 @@ function debarbariInit() {
     new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
     L.tileLayer('tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
-    var tms2 = L.tileLayer('tiles/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
+    var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
   });
 }
@@ -1053,15 +1062,19 @@ function endPolyMode() {
   L.polygon(points).addTo(map);
   map.off('click', addPoint);
 
-  var polydata = "[\n";
-  for (var i = 0; i < points.length; ++i) {
-    polydata += '\t['+points[i].lat+', '+points[i].lng+'],\n';
-  }
-  polydata += "]";
+  landmarkName = prompt("What is the name of this landmark?");
+  var data = {points: points, name: landmarkName};
+  fb.child('vpc').child('polyTemp').push(data);
 
-  $('body').append('<pre id="polydata">'+polydata+'</pre>');
-  $('#polydata').dialog({title: 'Send this to Justin with the name of the landmark!', width: "50%", close: function() {$('#polydata').remove();} });
-  console.log(polydata);
+  // var polydata = "[\n";
+  // for (var i = 0; i < points.length; ++i) {
+  //   polydata += '\t['+points[i].lat+', '+points[i].lng+'],\n';
+  // }
+  // polydata += "]";
+
+  // $('body').append('<pre id="polydata">'+polydata+'</pre>');
+  // $('#polydata').dialog({title: 'Send this to Justin with the name of the landmark!', width: "50%", close: function() {$('#polydata').remove();} });
+  // console.log(polydata);
 
   points = [];
   for (var i = 0; i < markers.length; ++i) {
@@ -1192,6 +1205,59 @@ function toggleBridgeLayer() {
 
     bridgePolys = [];
   }
+}
+
+// Firebase auth
+var auth = new FirebaseSimpleLogin(fb, fbUserCallback);
+
+function fbUserCallback(error, user) {
+  if (error) {
+    console.log(error);
+    $('#login-text').show();
+  }
+  else if (user) {
+    $('#login-form').hide();
+    $('#login-text').show();
+    $('#login-text').text("Logged in as " + user.email);
+    $('#drawmode').css('display', 'inline');
+  }
+}
+
+function fbLogin(email, password) {
+  auth.login('password', {
+    email: email,
+    password: password
+  }, function(error, user) { 
+    if (error)
+      console.log(error);
+  });
+}
+
+function fbSignup(email, password) {
+
+}
+
+// Login form
+function showLoginForm(type) {
+  var callback;
+  if (type == "login") {
+    callback = fbLogin;
+  }
+  else {
+    alert("Not working yet. Check back soon!");
+    return; //
+    callback = fbSignup;
+  }
+
+  $('#password').on('keyup', function(e) {
+    if (e.keyCode == 13) {
+      callback($('#email').val(), $('#password').val());
+      $('#password').off('keyup');
+    }
+  });
+
+  $('#login-form').css('display', 'block');
+  $('#login-text').hide();
 }
 
 // UTIL
