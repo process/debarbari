@@ -28,17 +28,17 @@
   </div>
   <div class="header" id="mini-header">
     <input class="search" id="mini-search" placeholder="Search..." />
-    <a class="dl" download="debarbari.png" href="#"><img class="icon" src="filesave.png" /></a>
-    <a id="select" href="#"><img class="icon" src="select.png" /></a>
+    <a id="dl" class="dl" download="debarbari.png" href="#" data-toggle="tooltip" title="Download what is currently visible"><img class="icon" src="filesave.png" /></a>
+    <a id="select" href="#" data-toggle="tooltip" title="Download a selection"><img class="icon" src="select.png" /></a>
     <div class="dropdown" style="display:inline;">
-      <a data-toggle="dropdown" href="#"><img src="layers.png" /></a>
+      <a id="layers" data-toggle="dropdown" href="#" title="Enable and disable layers"><img src="layers.png" /></a>
       <ul class="dropdown-menu" role="menu">
         <li role="presentation"><a role="menuitem" id="demolished-church-layer" href="#">Demolished Churches</a></li>
         <li role="presentation"><a role="menuitem" id="bridge-layer" href="#">Bridges</a></li>
       </ul>
     </div>
-    <a id="drawmode"><img class="icon" src="pencil.png" /></a>
-    <a id="plus-sign"><img class="icon" src="about.png" /></a>
+    <a id="drawmode" data-toggle="tooltip" title="Draw a new polygon"><img class="icon" src="pencil.png" /></a>
+    <a id="plus-sign" data-toggle="tooltip" title="Get more information"><img class="icon" src="about.png" /></a>
   </div>
   <div class="login">
     <p id="login-text"><a id="login-link" href="#">Login</a> / <a id="signup-link" href="#">Sign up</a></p>

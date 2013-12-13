@@ -81,6 +81,13 @@ function debarbariInit() {
       showLoginForm('signup');
     });
 
+    // Tooltips
+    $('#dl').tooltip({ placement: 'bottom' });
+    $('#select').tooltip({ placement: 'bottom' });
+    $('#layers').tooltip({ placement: 'bottom' });
+    $('#drawmode').tooltip({ placement: 'bottom' });
+    $('#plus-sign').tooltip({ placement: 'bottom' });
+
     // Pull data from firebase
     fb.child('vpc').once('value', function (snapshot) {
       DATA = snapshot.val();
