@@ -50,11 +50,14 @@ function debarbariInit() {
     initializeLayers();
     
     // Register handlers
-    $(".dl").click(function () { 
-      this.href = getData(); 
-      setTimeout(function() { 
-        $(".dl").attr("href", "#");
-      }, 100); 
+    $("#dlbutton").click(function () { 
+        var link = document.createElement("a");
+        link.href = getData();
+        link.download = "debarbari.png";
+        var theEvent = document.createEvent("MouseEvent");
+        theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        link.dispatchEvent(theEvent);
+        delete link;
     });
 
     rectDrawer = new RectDrawer;
@@ -80,7 +83,7 @@ function debarbariInit() {
     });
 
     // Tooltips
-    $('#dl').tooltip({ placement: 'bottom' });
+    $('#dlbutton').tooltip({ placement: 'bottom' });
     $('#select').tooltip({ placement: 'bottom' });
     $('#layers').tooltip({ placement: 'bottom' });
     $('#drawmode').tooltip({ placement: 'bottom' });

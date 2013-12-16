@@ -23,10 +23,10 @@
   <div class="header" id="mini-header">
     <input class="search form-control" id="mini-search" placeholder="Search..." />
     <div class="btn-group">
-      <button id="dl" class="dl btn btn-default" download="debarbari.png" data-toggle="tooltip" title="Download what is currently visible"><img class="icon" src="filesave.png" /></button>
+      <button id="dlbutton" class="btn btn-default" data-toggle="tooltip" title="Download what is currently visible"><img class="icon" src="filesave.png" /></button>
       <button id="select" class="btn btn-default" data-toggle="tooltip" title="Download a selection"><img class="icon" src="select.png" /></button>
-      <div id="layer-dropdown" class="dropdown" style="display:inline;">
-        <button id="layers" class="btn btn-default" data-toggle="dropdown" data-target="#layer-dropdown" title="Enable and disable layers"><img class="icon" src="layers.png" /></button>
+      <div id="layer-dropdown" class="btn-group">
+        <button id="layers" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-target="#layer-dropdown" title="Enable and disable layers"><img class="icon" src="layers.png" /></button>
         <ul id="layers-menu" class="dropdown-menu" role="menu">
         </ul>
       </div>
@@ -92,7 +92,7 @@
           <br />
           <label for="new-layer-id">ID: </label><input id="new-layer-id" class="form-control" placeholder="Short name to be used internally (eg. demolished-church)"></input>
           <br />
-          <label for="new-layer-color">Color: </label><input id="new-layer-color" class="form-control" placeholder="HTML Color (eg. '#c0c0c0' or 'silver')"></input>
+          <label for="new-layer-color">Color: </label><input id="new-layer-color" class="form-control" placeholder="HTML Color (eg. #c0c0c0 or silver)"></input>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
