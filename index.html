@@ -20,12 +20,6 @@
   </head>
   <body>
   <div id="map"></div>
-  <div class="header" id="header">
-    <p class="header-text"><b>The de'Barbari Map</b></p>
-    <p class="nonbold-header-text">This map of Venice was created by Jacopo de'Barbari in the year 1500. For more details, refer to the map's <a href="http://www.venipedia.org/wiki/index.php?title=User:Justin/deBarbari">Venipedia entry</a>. This tool allows you the explore the Venice Project Center's extremely high quality scan.</p>
-    <p>You can enable and disable different color overlays for different landmarks on the site. When this is done, the search will be modified so that only landmarks highlighted in the selected overlays will appear in the autocompletion dropdown.</p>
-    <span class="header-size-control" id="minus-sign">‒</span>
-  </div>
   <div class="header" id="mini-header">
     <input class="search form-control" id="mini-search" placeholder="Search..." />
     <div class="btn-group">
@@ -40,12 +34,31 @@
       <button id="plus-sign" class="btn btn-default" data-toggle="tooltip" title="Get more information"><img class="icon" src="about.png" /></button>
     </div>
   </div>
-  <div class="login">
-    <p id="login-text"><a id="login-link" href="#">Login</a> / <a id="signup-link" href="#">Sign up</a></p>
-    <p id="loggedin-text">Logged in as <span id="loggedin-username"></span>. <a id="logout-link" href="#">Logout</a></p>
-    <div id="login-form" class="login-form">
-      <input id="email" class="login-input form-control" placeholder="Email" /><br />
-      <input id="password" class="login-input form-control" type="password" placeholder="Password" />
+  <div class="login panel panel-default">
+    <div class="panel-body">
+      <span id="login-text"><a id="login-link" href="#">Login</a> / <a id="signup-link" href="#">Sign up</a></span>
+      <span id="loggedin-text">Logged in as <span id="loggedin-username"></span>. <a id="logout-link" href="#">Logout</a></span>
+      <div id="login-form" class="login-form">
+        <input id="email" class="login-input form-control" placeholder="Email" /><br />
+        <input id="password" class="login-input form-control" type="password" placeholder="Password" />
+      </div>
+    </div>
+  </div>
+  <div id="info-modal" class="modal fade" id="header">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">The de'Barbari Map</h4>
+        </div>
+        <div class="modal-body">
+          This map of Venice was created by Jacopo de'Barbari in the year 1500. For more details, refer to the map's <a href="http://www.venipedia.org/wiki/index.php?title=User:Justin/deBarbari">Venipedia entry</a>. This tool allows you the explore the Venice Project Center's extremely high quality scan.
+          You can enable and disable different color overlays for different landmarks on the site. When this is done, the search will be modified so that only landmarks highlighted in the selected overlays will appear in the autocompletion dropdown.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Okay!</button>
+        </div>
+      </div>
     </div>
   </div>
   <div id="new-feature" class="modal fade">

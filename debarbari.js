@@ -50,15 +50,6 @@ function debarbariInit() {
     initializeLayers();
     
     // Register handlers
-    $("#header").hover(
-      function () { // onmouseenter
-        $("#header").animate({ opacity: 1.0 }, 250); 
-      },
-      function () { // onmouseleave
-        $("#header").animate({ opacity: 0.6 }, 250); 
-      }
-    );
-
     $(".dl").click(function () { 
       this.href = getData(); 
       setTimeout(function() { 
@@ -68,9 +59,6 @@ function debarbariInit() {
 
     rectDrawer = new RectDrawer;
     $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
-
-    $("#minus-sign").click(hideHeader);
-    $("#plus-sign").click(showHeader);
 
     $('#drawmode').click(togglePolyMode);
 
@@ -86,6 +74,10 @@ function debarbariInit() {
 
     $('#new-feature-discard').click(cleanUpPolyMode);
     $('#new-feature-submit').click(submitFeature);
+
+    $('#plus-sign').click(function () {
+      $('#info-modal').modal('show');
+    });
 
     // Tooltips
     $('#dl').tooltip({ placement: 'bottom' });
@@ -154,23 +146,6 @@ function getData() {
 
   var img_url = c.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
   return img_url;
-}
-
-function hideHeader() {
-  $("#header").animate({height: 0, width: 0}, 250, function () {
-    $("#header").css('display', 'none');
-    $("#mini-header").css('display', 'block');
-  });
-}
-
-function showHeader() {
-  $("#header").css({height: "auto", width: "auto"});
-  var autoWidth = $("#header").css("width");
-  var autoHeight = $("#header").css("height");
-  $("#header").css({height: 0, width: 0, display: "block"});
-
-  $("#mini-header").css({display: "none"});
-  $("#header").animate({height: autoHeight, width: autoWidth}, 250);
 }
 
 function downloadSection(x, y, width, height) {
