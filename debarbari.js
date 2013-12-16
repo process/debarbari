@@ -357,9 +357,13 @@ function toggleLayer(type, color) {
         var newPoly = L.polygon(points, {color: color, weight: 2});
 
         // Clicking on a polygon will bring up a pop up
-        newPoly.on('click', (function (name, loc){
-          L.popup().setLatLng(loc).setContent('<b class="popup">'+name+'</b>').openOn(map);
-        }).bind(this, DATA[i].properties.name, DATA[i].properties.center));
+        newPoly.on('click', (function (data){
+          var content = '<b class="popup">'+data.properties.name+'</b>';
+          if (data.properties.link) {
+            content = '<a href="' + data.properties.link + '">' + content + '</a>';
+          }
+          L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
+        }).bind(this, DATA[i]));
 
         // Double clicking a polygon will center the landmark
         newPoly.on('dblclick', (function (loc) {
