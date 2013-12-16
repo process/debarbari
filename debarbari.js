@@ -1,5 +1,5 @@
 var map;
-var DATA;
+var DATA = [];
 var fb = new Firebase('https://vpc.firebaseio.com/debarbari');
 
 // Demolished Church of the Templari is aka Santa Maria dell'Ascensione
@@ -45,6 +45,10 @@ function getAutoCompleteNames(datasets) {
 function debarbariInit() {
   // jQuery init
   $(function() {
+    // Get data from Firebase
+    initializeSearch();
+    initializeLayers();
+    
     // Register handlers
     $("#header").hover(
       function () { // onmouseenter
@@ -68,10 +72,6 @@ function debarbariInit() {
     $("#minus-sign").click(hideHeader);
     $("#plus-sign").click(showHeader);
 
-    // TODO Make this data driven based on data and create menu dynamically
-    $("#demolished-church-layer").click(toggleLayer.bind(this, 'demolished-church'));
-    $("#bridge-layer").click(toggleLayer.bind(this, 'bridge'));
-
     $('#drawmode').click(togglePolyMode);
 
     $('#login-link').click(function () {
@@ -80,6 +80,12 @@ function debarbariInit() {
     $('#signup-link').click(function () {
       showLoginForm('signup');
     });
+    $('#logout-link').click(fbLogout);
+
+    $('#new-layer-button').click(addNewLayer);
+
+    $('#new-feature-discard').click(cleanUpPolyMode);
+    $('#new-feature-submit').click(submitFeature);
 
     // Tooltips
     $('#dl').tooltip({ placement: 'bottom' });
@@ -88,29 +94,40 @@ function debarbariInit() {
     $('#drawmode').tooltip({ placement: 'bottom' });
     $('#plus-sign').tooltip({ placement: 'bottom' });
 
-    // Pull data from firebase
-    fb.child('vpc').once('value', function (snapshot) {
-      DATA = snapshot.val();
-      initializeSearch();
-    });
-    
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 294/*22973.5*/], zoom: 3, attributionControl: false });
     new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
     L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
-    var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true});
+    var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 1, maxZoom: 1, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
   });
 }
 
 function initializeSearch() {
-  // Initialize search
-  var names = getAutoCompleteNames([DATA]);
-  $(".search").autocomplete({ source: names });
+  fb.child('vpc/features').on('child_added', function (snapshot) {
+    DATA.push(snapshot.val());
+    var names = getAutoCompleteNames([DATA]);
+    $(".search").autocomplete({ source: names });
+  });
   $(".search").on("autocompleteselect", function (event, ui) {
     var landmark = findData(DATA, ui.item.value);
     map.setView(landmark.properties.center, 8 /* LOL IGNORE ZOOM */, { animate: true });
+  });
+}
+
+function initializeLayers() {
+  fb.child('vpc/layers').on('child_added', function (snapshot) {
+    var data = snapshot.val();
+    var newOption = '<li role="presentation"><a role="menuitem" id="'+data.id+'-layer" href="#">'+data.name+'</a></li>';
+    if (loggedIn) {
+      $('#new-layer-button').before(newOption);
+    }
+    else {
+      $('#layers-menu').append(newOption);
+    }
+    $('#' + data.id + '-layer').click(toggleLayer.bind(this, data.id, data.color));
+    $('#new-feature-type').append('<option value="'+data.id+'">'+data.name+'</option>');
   });
 }
 
@@ -190,6 +207,7 @@ function addRect(x, y, width, height) {
 // Draw poly
 var points = [];
 var markers = [];
+var newPoly = null;
 
 var circleIcon = L.icon({
   // lol...
@@ -220,18 +238,55 @@ function togglePolyMode() {
 function startPolyMode() {
   map.on('click', addPoint);
   $('#drawmode>.icon').css('box-shadow','0 0 5px #fff');
+  $('#map').css('cursor', 'crosshair');
 }
 
 function endPolyMode() {
-  L.polygon(points).addTo(map);
+  newPoly = L.polygon(points);
+  newPoly.addTo(map);
   map.off('click', addPoint);
 
+  $('#map').css('cursor', 'grab'); // XXX Figure out why grabbing doesn't work
   $('#drawmode>.icon').css('box-shadow','0 0 0');
 
-  landmarkName = prompt("What is the name of this landmark?");
-  var data = {points: points, name: landmarkName};
-  fb.child('vpc').child('polyTemp').push(data);
+  $('#new-feature').modal('show');
+  // landmarkName = prompt("What is the name of this landmark?");
+  // var data = {points: points, name: landmarkName};
+  // fb.child('vpc').child('polyTemp').push(data);
+}
 
+function submitFeature() {
+  var name = $('#new-feature-name').val();
+  var type = $('#new-feature-type').val();
+
+  // XXX fix name
+  if (!name) return;
+
+  // If the feature already exists, update it
+  var feature = findData(DATA, name);
+  if (feature) {
+    feature.geometry = newPoly.toGeoJSON().geometry;
+    fb.child('vpc/features').set(DATA);
+  }
+  else {
+    var newFeature = {
+      type: "Feature",
+      geometry: newPoly.toGeoJSON().geometry,
+      properties: {
+        name: name,
+        type: type,
+        zoom: map.getZoom(),
+        center: newPoly.getBounds().getCenter()
+      }
+    };
+    fb.child('vpc/features').push(newFeature);
+  }
+
+  $('#new-feature').modal('hide');
+  cleanUpPolyMode();
+}
+
+function cleanUpPolyMode() {
   points = [];
   for (var i = 0; i < markers.length; ++i) {
     map.removeLayer(markers[i]);
@@ -298,19 +353,34 @@ function RectDrawer() {
   }
 }
 
-// Enable layers
+// Layers
+function addNewLayer() {
+  var name = $('#new-layer-name').val();
+  var id = $('#new-layer-id').val();
+  var color = $('#new-layer-color').val();
+
+  // Fail silently if fields empty for now
+  if (!(name || id || color)) {
+    return;
+  }
+
+  // TODO generalize for any account
+  fb.child('vpc').child('layers').push({name: name, id: id, color: color});
+  $('#new-layer').modal('hide');
+}
+
 var polyState = {};
-function toggleLayer(type) {
+function toggleLayer(type, color) {
   if (!polyState[type]) {
     polyState[type] = [];
     for (var i = 0; i < DATA.length; ++i) {
       if (DATA[i].properties.type == type && DATA[i].geometry) {
         var points = geoJSONToLeaflet(DATA[i].geometry.coordinates[0]);
-        var newPoly = L.polygon(points, {color: 'red', weight: 2});
+        var newPoly = L.polygon(points, {color: color, weight: 2});
 
         // Clicking on a polygon will bring up a pop up
         newPoly.on('click', (function (name, loc){
-          L.popup().setLatLng(loc).setContent(name).openOn(map);
+          L.popup().setLatLng(loc).setContent('<b class="popup">'+name+'</b>').openOn(map);
         }).bind(this, DATA[i].properties.name, DATA[i].properties.center));
 
         // Double clicking a polygon will center the landmark
@@ -352,24 +422,43 @@ function toggleLayer(type) {
 
 // Firebase auth
 var auth = new FirebaseSimpleLogin(fb, fbUserCallback);
+var loggedIn = false;
 
 function fbUserCallback(error, user) {
-  if (error) {
+  if (error) { /* Error */
     console.log(error);
+    loggedIn = false;
     $('#login-text').show();
-  }
-  else if (user) {
+    $('#loggedin-text').hide();
     $('#login-form').hide();
-    $('#login-text').show();
-    $('#login-text').text("Logged in as " + user.email);
-    $('#drawmode').css('display', 'inline');
   }
+  else if (user) { /* Logged in */
+    loggedIn = true;
+    $('#login-form').hide();
+    $('#login-text').hide();
+    $('#loggedin-username').text(user.email);
+    $('#loggedin-text').show();
+    $('#drawmode').css('display', 'inline');
+    $('#layers-menu').append('<li id="new-layer-button" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>')
+  } else { /* Logged out */
+    loggedIn = false;
+    $('#login-text').show();
+    $('#loggedin-text').hide();
+    $('#login-form').hide();
+    $('#drawmode').css('display', 'none');
+    $('#new-layer-button').remove();
+  }
+}
+
+function fbLogout() {
+  auth.logout();
 }
 
 function fbLogin(email, password) {
   auth.login('password', {
     email: email,
-    password: password
+    password: password,
+    rememberMe: true
   }, function(error, user) { 
     if (error)
       console.log(error);

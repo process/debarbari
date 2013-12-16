@@ -15,12 +15,13 @@ html, body
 }
 .icon
 {
-  height: 32px;
-  width: 32px;
+  height:16px;
+  width: 16px;
   vertical-align: middle;
 }
 .search
 {
+  display: inline; /* Override Bootstrap */
   width: 50%;
   border-radius: 5px;
 }
@@ -89,6 +90,9 @@ html, body
 }
 .login-input {
   border-radius: 5px;
+}
+.popup {
+  font-size: large;
 }
 #minus-sign
 {

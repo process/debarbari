@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <title>The de'Barbari Map</title>
-    <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="css/leaflet.css" />
     <link rel="stylesheet" href="css/jquery-ui.css" />
     <link rel="stylesheet" href="css/bootstrap.min.css" />
     <link rel="stylesheet" href="js/mini/Control.MiniMap.css" />
+    <link rel="stylesheet" href="style.css" />
     <script src="js/leaflet.js"></script>
     <script src="js/jquery.min.js"></script>
     <script src="js/jquery-ui.js"></script>
@@ -27,26 +27,67 @@
     <span class="header-size-control" id="minus-sign">‒</span>
   </div>
   <div class="header" id="mini-header">
-    <input class="search" id="mini-search" placeholder="Search..." />
-    <a id="dl" class="dl" download="debarbari.png" href="#" data-toggle="tooltip" title="Download what is currently visible"><img class="icon" src="filesave.png" /></a>
-    <a id="select" href="#" data-toggle="tooltip" title="Download a selection"><img class="icon" src="select.png" /></a>
-    <div class="dropdown" style="display:inline;">
-      <a id="layers" data-toggle="dropdown" href="#" title="Enable and disable layers"><img src="layers.png" /></a>
-      <ul class="dropdown-menu" role="menu">
-        <li role="presentation"><a role="menuitem" id="demolished-church-layer" href="#">Demolished Churches</a></li>
-        <li role="presentation"><a role="menuitem" id="bridge-layer" href="#">Bridges</a></li>
-      </ul>
+    <input class="search form-control" id="mini-search" placeholder="Search..." />
+    <div class="btn-group">
+      <button id="dl" class="dl btn btn-default" download="debarbari.png" data-toggle="tooltip" title="Download what is currently visible"><img class="icon" src="filesave.png" /></button>
+      <button id="select" class="btn btn-default" data-toggle="tooltip" title="Download a selection"><img class="icon" src="select.png" /></button>
+      <div id="layer-dropdown" class="dropdown" style="display:inline;">
+        <button id="layers" class="btn btn-default" data-toggle="dropdown" data-target="#layer-dropdown" title="Enable and disable layers"><img class="icon" src="layers.png" /></button>
+        <ul id="layers-menu" class="dropdown-menu" role="menu">
+        </ul>
+      </div>
+      <button id="drawmode" class="btn btn-default" data-toggle="tooltip" title="Draw a new polygon"><img class="icon" src="pencil.png" /></button>
+      <button id="plus-sign" class="btn btn-default" data-toggle="tooltip" title="Get more information"><img class="icon" src="about.png" /></button>
     </div>
-    <a id="drawmode" data-toggle="tooltip" title="Draw a new polygon"><img class="icon" src="pencil.png" /></a>
-    <a id="plus-sign" data-toggle="tooltip" title="Get more information"><img class="icon" src="about.png" /></a>
   </div>
   <div class="login">
     <p id="login-text"><a id="login-link" href="#">Login</a> / <a id="signup-link" href="#">Sign up</a></p>
+    <p id="loggedin-text">Logged in as <span id="loggedin-username"></span>. <a id="logout-link" href="#">Logout</a></p>
     <div id="login-form" class="login-form">
-      <input id="email" class="login-input" placeholder="Email" /><br />
-      <input id="password" class="login-input" type="password" placeholder="Password" />
+      <input id="email" class="login-input form-control" placeholder="Email" /><br />
+      <input id="password" class="login-input form-control" type="password" placeholder="Password" />
     </div>
   </div>
+  <div id="new-feature" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Save new feature</h4>
+        </div>
+        <div class="modal-body">
+          <label for="new-feature-name">Name: </label><input id="new-feature-name" class="form-control" placeholder="Name of this landmark"></input>
+          <br />
+          <label for="new-feature-type">Type: </label><select id="new-feature-type" class="form-control"></select>
+        </div>
+        <div class="modal-footer">
+          <button id="new-feature-discard" type="button" class="btn btn-danger" data-dismiss="modal">Discard</button>
+          <button id="new-feature-submit" type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <div id="new-layer" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Create a new layer</h4>
+        </div>
+        <div class="modal-body">
+          <label for="new-layer-name">Name: </label><input id="new-layer-name" class="form-control" placeholder="Name that will appear in the layers list (eg. Demolished Churches)"></input>
+          <br />
+          <label for="new-layer-id">ID: </label><input id="new-layer-id" class="form-control" placeholder="Short name to be used internally (eg. demolished-church)"></input>
+          <br />
+          <label for="new-layer-color">Color: </label><input id="new-layer-color" class="form-control" placeholder="HTML Color (eg. '#c0c0c0' or 'silver')"></input>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button id="new-layer-button" type="button" class="btn btn-primary">Create</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
   </body>
 <!--Tiles generated by MapTiler/GDAL2Tiles, Copyright © 2008 Klokan Petr Pridal, GDAL & OSGeo GSoC-->
 </html>
