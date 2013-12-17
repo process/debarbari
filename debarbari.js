@@ -96,6 +96,33 @@ function debarbariInit() {
 
     var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 1, maxZoom: 1, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
+
+    // Add zoom out button
+    var MyControl = L.Control.extend({
+      options: {
+          position: 'topleft'
+      },
+
+      onAdd: function (map) {
+        // create the control container with a particular class name
+        var container = L.DomUtil.create('div', 'leaflet-bar');
+
+        var link = L.DomUtil.create('a', '', container);
+        link.href = "#";
+        $(link).click(function() {
+          map.setZoom(1);
+        });
+
+        var img = L.DomUtil.create('img', 'fullscreen-link', link);
+        img.src = "fullscreen.png";
+        img.style.width = '14px';
+        img.style.height = '14px';
+
+        return container;
+      }
+    });
+
+    map.addControl(new MyControl());
   });
 }
 
