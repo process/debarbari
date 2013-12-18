@@ -63,7 +63,7 @@ function debarbariInit() {
     rectDrawer = new RectDrawer;
     $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
 
-    $('#drawmode').click(togglePolyMode);
+    $('#drawmode').click(startPolyMode);
 
     $('#login-link').click(function () {
       showLoginForm('login');
@@ -75,7 +75,6 @@ function debarbariInit() {
 
     $('#new-layer-button').click(addNewLayer);
 
-    $('#new-feature-discard').click(cleanUpPolyMode);
     $('#new-feature-submit').click(submitFeature);
 
     $('#plus-sign').click(function () {
@@ -114,7 +113,7 @@ function debarbariInit() {
         });
 
         var img = L.DomUtil.create('img', 'fullscreen-link', link);
-        img.src = "fullscreen.png";
+        img.src = "img/fullscreen.png";
         img.style.width = '14px';
         img.style.height = '14px';
 
@@ -229,35 +228,24 @@ function addPoint(event) {
 }
 
 var polymode = false;
-function togglePolyMode() {
-  if (polymode) {
-    endPolyMode();
-    polymode = false;
-  }
-  else {
-    startPolyMode();
-    polymode = true;
-  }
-}
+var polyLayer;
 
 function startPolyMode() {
-  map.on('click', addPoint);
-  $('#drawmode>.icon').css('box-shadow','0 0 5px #fff');
-  $('#map').css('cursor', 'crosshair');
-}
+  if (polymode) return;
+  polymode = true;
 
-function endPolyMode() {
-  newPoly = L.polygon(points);
-  newPoly.addTo(map);
-  map.off('click', addPoint);
+  map.once('draw:created', function (e) {
+    polyLayer = e.layer;
+    $('#new-feature').modal('show');
+    $('#drawmode').removeClass('active');
+    polymode = false;
+  });
 
-  $('#map').css('cursor', 'grab'); // XXX Figure out why grabbing doesn't work
-  $('#drawmode>.icon').css('box-shadow','0 0 0');
+  // Start the Leaflet.Draw plugin
+  new L.Draw.Polygon(map).enable();
 
-  $('#new-feature').modal('show');
-  // landmarkName = prompt("What is the name of this landmark?");
-  // var data = {points: points, name: landmarkName};
-  // fb.child('vpc').child('polyTemp').push(data);
+  // Update button style
+  $('#drawmode').addClass('active');
 }
 
 function submitFeature() {
@@ -270,33 +258,24 @@ function submitFeature() {
   // If the feature already exists, update it
   var feature = findData(DATA, name);
   if (feature) {
-    feature.geometry = newPoly.toGeoJSON().geometry;
+    feature.geometry = polyLayer.toGeoJSON().geometry;
     fb.child('vpc/features').set(DATA);
   }
   else {
     var newFeature = {
       type: "Feature",
-      geometry: newPoly.toGeoJSON().geometry,
+      geometry: polyLayer.toGeoJSON().geometry,
       properties: {
         name: name,
         type: type,
         zoom: map.getZoom(),
-        center: newPoly.getBounds().getCenter()
+        center: polyLayer.getBounds().getCenter()
       }
     };
     fb.child('vpc/features').push(newFeature);
   }
 
   $('#new-feature').modal('hide');
-  cleanUpPolyMode();
-}
-
-function cleanUpPolyMode() {
-  points = [];
-  for (var i = 0; i < markers.length; ++i) {
-    map.removeLayer(markers[i]);
-  }
-  markers = [];
 }
 
 // Download rect
@@ -313,6 +292,7 @@ function RectDrawer() {
     $(".rect").remove();
     $(".rect-canvas").remove();
 
+    $('#select').removeClass('active');
     callback(x, y, width, height);
   }
 
@@ -328,6 +308,8 @@ function RectDrawer() {
     $("body").append('<div class="rect-canvas"></div>');
     $(".rect-canvas").mousedown(this.startRect.bind(this));
     $(".rect-canvas").mouseup(this.endRect.bind(this, callback));
+
+    $('#select').addClass('active');
   }
 
   this.updateRect = function(event) {
