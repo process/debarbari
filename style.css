@@ -94,6 +94,9 @@ html, body
 .popup {
   font-size: large;
 }
+.org-logo {
+  width: 200px;
+}
 #minus-sign
 {
   position: absolute;
