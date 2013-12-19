@@ -251,6 +251,7 @@ function startPolyMode() {
 function submitFeature() {
   var name = $('#new-feature-name').val();
   var type = $('#new-feature-type').val();
+  var link = $('#new-feature-link').val();
 
   // XXX fix name
   if (!name) return;
@@ -268,6 +269,7 @@ function submitFeature() {
       properties: {
         name: name,
         type: type,
+        link: link,
         zoom: map.getZoom(),
         center: polyLayer.getBounds().getCenter()
       }
