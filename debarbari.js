@@ -142,7 +142,7 @@ function initializeLayers() {
     var data = snapshot.val();
     var newOption = '<li role="presentation"><a role="menuitem" id="'+data.id+'-layer" href="#">'+data.name+'</a></li>';
     if (loggedIn) {
-      $('#new-layer-button').before(newOption);
+      $('#new-layer-menu').before(newOption);
     }
     else {
       $('#layers-menu').append(newOption);
@@ -432,14 +432,14 @@ function fbUserCallback(error, user) {
     $('#loggedin-username').text(user.email);
     $('#loggedin-text').show();
     $('#drawmode').css('display', 'inline');
-    $('#layers-menu').append('<li id="new-layer-button" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>')
+    $('#layers-menu').append('<li id="new-layer-menu" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>')
   } else { /* Logged out */
     loggedIn = false;
     $('#login-text').show();
     $('#loggedin-text').hide();
     $('#login-form').hide();
     $('#drawmode').css('display', 'none');
-    $('#new-layer-button').remove();
+    $('#new-layer-menu').remove();
   }
 }
 
