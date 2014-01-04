@@ -74,8 +74,8 @@ function debarbariInit() {
     $('#logout-link').click(fbLogout);
 
     $('#new-layer-button').click(addNewLayer);
-
     $('#new-feature-submit').click(submitFeature);
+    $('#new-feature-discard').click(discardFeature);
 
     $('#plus-sign').click(function () {
       $('#info-modal').modal('show');
@@ -213,36 +213,56 @@ var points = [];
 var markers = [];
 var newPoly = null;
 
-var circleIcon = L.icon({
-  // lol...
-  iconUrl: "http://www.rand.org/content/dam/rand/www/external/pubs/research_briefs/RB9385/images/circle1.gif", 
-  iconSize: [12, 12],
-  iconAnchor: [6, 6]
-});
-
-function addPoint(event) {
-  var marker = new L.Marker(event.latlng, {icon: circleIcon});
-  marker.addTo(map);
-  markers.push(marker);
-  points.push(event.latlng);
-}
-
-var polymode = false;
+var state = "start";
+var editor;
 var polyLayer;
-
 function startPolyMode() {
-  if (polymode) return;
-  polymode = true;
+  if (state == "draw") return;
 
-  map.once('draw:created', function (e) {
-    polyLayer = e.layer;
+  if (state == "edit") {
+    editor.disable();
+    state = "editend";
+
+    $('#new-feature-name').val(selectedData.properties.name);
+    $('#new-feature-type').val(selectedData.properties.type);
+    $('#new-feature-link').val(selectedData.properties.link);
+
     $('#new-feature').modal('show');
     $('#drawmode').removeClass('active');
-    polymode = false;
-  });
+    return;
+  }
 
-  // Start the Leaflet.Draw plugin
-  new L.Draw.Polygon(map).enable();
+  // XXX HACK ALERT
+  // Check if a feature is selected. This will unselect it.
+  var layerCount = Object.keys(map._layers).length;
+  map.closePopup();
+  var newLayerCount = Object.keys(map._layers).length;
+  var objectSelected = layerCount > newLayerCount;
+
+  if(objectSelected) { // If an object is selected, edit it
+    // selectedPoly in the poly click handler
+    polyLayer = selectedPoly;
+    editor = new L.Edit.Poly(selectedPoly);
+    editor.enable();
+    state = "edit";
+  }
+
+  else { // Draw a new polygon
+    map.once('draw:created', function (e) {
+      polyLayer = e.layer;
+      $('#new-feature').modal('show');
+      $('#drawmode').removeClass('active');
+      state = "start";
+    });
+
+    // Start the Leaflet.Draw plugin
+    var circleIcon = new L.Icon({
+      iconUrl: "img/circle.png", 
+      iconSize: [8,8]
+    });
+    new L.Draw.Polygon(map, {icon: circleIcon}).enable();
+    state = "draw";
+  }
 
   // Update button style
   $('#drawmode').addClass('active');
@@ -257,9 +277,19 @@ function submitFeature() {
   if (!name) return;
 
   // If the feature already exists, update it
-  var feature = findData(DATA, name);
+  var feature;
+  if (state == "editend") {
+    feature = selectedData;
+    state = "start";
+  }
+  else {
+    feature = findData(DATA, name);
+  }
   if (feature) {
+    feature.properties.name = name;
     feature.geometry = polyLayer.toGeoJSON().geometry;
+    feature.properties.type = type;
+    feature.properties.link = link;
     fb.child('vpc/features').set(DATA);
   }
   else {
@@ -271,10 +301,22 @@ function submitFeature() {
         type: type,
         link: link,
         zoom: map.getZoom(),
-        center: polyLayer.getBounds().getCenter()
+        center: { 
+          lat: polyLayer.getBounds().getCenter().lat, 
+          lng: polyLayer.getBounds().getCenter().lng
+        }
       }
     };
     fb.child('vpc/features').push(newFeature);
+  }
+
+  $('#new-feature').modal('hide');
+}
+
+function discardFeature() {
+  if (state == "editend") { // If data exists (editing), delete it
+    DATA.splice(DATA.indexOf(selectedData), 1);
+    fb.child('vpc/features').set(DATA);
   }
 
   $('#new-feature').modal('hide');
@@ -359,6 +401,8 @@ function addNewLayer() {
 }
 
 var polyState = {};
+var selectedPoly = null;
+var selectedData = null;
 function toggleLayer(type, color) {
   if (!polyState[type]) {
     polyState[type] = [];
@@ -368,15 +412,18 @@ function toggleLayer(type, color) {
         var newPoly = L.polygon(points, {color: color, weight: 2});
 
         // Clicking on a polygon will bring up a pop up
-        newPoly.on('click', (function (data){
+        newPoly.on('click', (function (data, poly){
           var content = '<b class="popup">'+data.properties.name+'</b>';
           if (data.properties.link) {
-            content = '<a href="' + data.properties.link + '">' + content + '</a>';
+            content = '<a href="' + data.properties.link + '" target="blank_">' + content + '</a>';
           }
           L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
-        }).bind(this, DATA[i]));
+          selectedPoly = poly;
+          selectedData = data;
+        }).bind(this, DATA[i], newPoly));
 
         // Double clicking a polygon will center the landmark
+        // XXX Doesn't work?
         newPoly.on('dblclick', (function (loc) {
           map.setView(loc).setZoom(8);
         }).bind(this, DATA[i].properties.center));
