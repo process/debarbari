@@ -90,7 +90,7 @@ function debarbariInit() {
 
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 294/*22973.5*/], zoom: 3, attributionControl: false });
-    new L.Control.Attribution({ prefix: false }).addAttribution('<a href="http://veniceprojectcenter.org">Venice Project Center</a>').addTo(map);
+    new L.Control.Attribution({ prefix: false, position: 'bottomleft' }).addAttribution('<a href="http://veniceprojectcenter.org">A Venice Project Center 25th Anniversary project</a>').addTo(map);
     L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
     var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 1, maxZoom: 1, tms: true});
