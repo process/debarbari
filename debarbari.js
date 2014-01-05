@@ -143,12 +143,30 @@ function initializeLayers() {
   fb.child('vpc/layers').on('child_added', function (snapshot) {
     var data = snapshot.val();
     var newOption = '<li role="presentation"><a role="menuitem" id="'+data.id+'-layer" href="#">'+data.name+'</a></li>';
-    if (loggedIn) {
-      $('#new-layer-menu').before(newOption);
+
+    if (data.parent) {
+      if ($('#'+data.parent+'-menu').length == 0) {
+        var newGroup = ' <li class="dropdown-submenu"><a href="#">'+data.parent+'</a><ul id="'+data.parent+'-menu" class="dropdown-menu"></ul></li>';
+        $('#new-layer-parent-other').before('<option value="'+data.parent+'">'+data.parent+'</option>')
+
+        if (loggedIn) {
+          $('#new-layer-menu').before(newGroup);
+        }
+        else {
+          $('layers-menu').append(newGroup);
+        }
+      }
+      $('#'+data.parent+'-menu').append(newOption);
     }
-    else {
-      $('.layers-menu').append(newOption);
+    else {    
+      if (loggedIn) {
+        $('#new-layer-menu').before(newOption);
+      }
+      else {
+        $('.layers-menu').append(newOption);
+      }
     }
+
     $('#' + data.id + '-layer').click(toggleLayer.bind(this, data.id, data.color));
     $('.layers-select').append('<option value="'+data.id+'">'+data.name+'</option>');
   });
@@ -392,6 +410,11 @@ function addNewLayer() {
   var name = $('#new-layer-name').val();
   var id = $('#new-layer-id').val();
   var color = $('#new-layer-color').val();
+  var parent = $('#new-layer-parent').val();
+
+  if (parent == "Other") {
+    parent = $('#new-layer-new-parent').val();
+  }
 
   // Fail silently if fields empty for now
   if (!(name || id || color)) {
@@ -399,7 +422,7 @@ function addNewLayer() {
   }
 
   // TODO generalize for any account
-  fb.child('vpc').child('layers').push({name: name, id: id, color: color});
+  fb.child('vpc/layers').push({name: name, id: id, color: color, parent: parent});
   $('#new-layer').modal('hide');
 }
 
