@@ -145,8 +145,9 @@ function initializeLayers() {
     var newOption = '<li role="presentation"><a role="menuitem" id="'+data.id+'-layer" href="#">'+data.name+'</a></li>';
 
     if (data.parent) {
-      if ($('#'+data.parent+'-menu').length == 0) {
-        var newGroup = ' <li class="dropdown-submenu"><a href="#">'+data.parent+'</a><ul id="'+data.parent+'-menu" class="dropdown-menu"></ul></li>';
+      var strippedParentName = data.parent.replace(/\s/g, '');
+      if ($('#'+strippedParentName+'-menu').length == 0) {
+        var newGroup = ' <li class="dropdown-submenu"><a href="#">'+data.parent+'</a><ul id="'+strippedParentName+'-menu" class="dropdown-menu"></ul></li>';
         $('#new-layer-parent-other').before('<option value="'+data.parent+'">'+data.parent+'</option>')
 
         if (loggedIn) {
@@ -156,7 +157,7 @@ function initializeLayers() {
           $('layers-menu').append(newGroup);
         }
       }
-      $('#'+data.parent+'-menu').append(newOption);
+      $('#'+strippedParentName+'-menu').append(newOption);
     }
     else {    
       if (loggedIn) {
