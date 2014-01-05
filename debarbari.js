@@ -77,6 +77,8 @@ function debarbariInit() {
     $('#new-feature-submit').click(submitFeature);
     $('#new-feature-discard').click(discardFeature);
 
+    $('#clone-button').click(clonePoly2);
+
     $('#plus-sign').click(function () {
       $('#info-modal').modal('show');
     });
@@ -145,10 +147,10 @@ function initializeLayers() {
       $('#new-layer-menu').before(newOption);
     }
     else {
-      $('#layers-menu').append(newOption);
+      $('.layers-menu').append(newOption);
     }
     $('#' + data.id + '-layer').click(toggleLayer.bind(this, data.id, data.color));
-    $('#new-feature-type').append('<option value="'+data.id+'">'+data.name+'</option>');
+    $('.layers-select').append('<option value="'+data.id+'">'+data.name+'</option>');
   });
 }
 
@@ -216,9 +218,10 @@ var newPoly = null;
 var state = "start";
 var editor;
 var polyLayer;
-function startPolyMode() {
+function startPolyMode() { // XXX misleading function name
   if (state == "draw") return;
 
+  // End edit mode
   if (state == "edit") {
     editor.disable();
     state = "editend";
@@ -400,6 +403,19 @@ function addNewLayer() {
   $('#new-layer').modal('hide');
 }
 
+function clonePoly() {
+  $('#clone-layer').modal('show');
+}
+
+function clonePoly2() {
+  var newData = $.extend(true, {}, selectedData); // clone the data
+  newData.properties.type = $('#clone-layer-type').val();
+  fb.child('vpc/features').push(newData);
+
+  $('#clone-layer').modal('hide');
+  map.closePopup();
+}
+
 var polyState = {};
 var selectedPoly = null;
 var selectedData = null;
@@ -416,6 +432,9 @@ function toggleLayer(type, color) {
           var content = '<b class="popup">'+data.properties.name+'</b>';
           if (data.properties.link) {
             content = '<a href="' + data.properties.link + '" target="blank_">' + content + '</a>';
+          }
+          if (loggedIn) {
+            content += '<br /><a class="clone" href="#" onclick="clonePoly()">Clone</a>';
           }
           L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
           selectedPoly = poly;
@@ -479,7 +498,7 @@ function fbUserCallback(error, user) {
     $('#loggedin-username').text(user.email);
     $('#loggedin-text').show();
     $('#drawmode').css('display', 'inline');
-    $('#layers-menu').append('<li id="new-layer-menu" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>')
+    $('.layers-menu').append('<li id="new-layer-menu" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>');
   } else { /* Logged out */
     loggedIn = false;
     $('#login-text').show();

@@ -30,7 +30,7 @@
       <button id="select" class="btn btn-default" data-toggle="tooltip" title="Download a selection"><img class="icon" src="img/select.png" /></button>
       <div id="layer-dropdown" class="btn-group">
         <button id="layers" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-target="#layer-dropdown" title="Enable and disable layers"><img class="icon" src="img/layers.png" /></button>
-        <ul id="layers-menu" class="dropdown-menu" role="menu">
+        <ul class="dropdown-menu layers-menu" role="menu">
         </ul>
       </div>
       <button id="drawmode" class="btn btn-default" data-toggle="tooltip" title="Draw a new polygon"><img class="icon" src="img/pencil.png" /></button>
@@ -79,7 +79,7 @@
         <div class="modal-body">
           <label for="new-feature-name">Name: </label><input id="new-feature-name" class="form-control" placeholder="Name of this landmark">
           <br />
-          <label for="new-feature-type">Type: </label><select id="new-feature-type" class="form-control"></select>
+          <label for="new-feature-type">Type: </label><select id="new-feature-type" class="form-control layers-select"></select>
           <br />
           <label for="new-feature-link">Link: </label><input id="new-feature-link" class="form-control" placeholder="A link to more information (such as a Venipedia page)"></select>
         </div>
@@ -107,6 +107,23 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
           <button id="new-layer-button" type="button" class="btn btn-primary">Create</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <div id="clone-layer" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Clone to other layer</h4>
+        </div>
+        <div class="modal-body">
+          <label for="clone-layer-type">Layer: </label><select id="clone-layer-type" class="form-control layers-select"></select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button id="clone-button" type="button" class="btn btn-primary">Clone</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
