@@ -1,6 +1,9 @@
 // Turn on strict mode
 "use strict";
 
+
+/*global $:false, L:false, window:false, document:false */
+
 var map,
     DATA = [],
     Firebase,
@@ -8,8 +11,11 @@ var map,
 
 
 // Remove if possible!!!!
-var fbAuth = new firebaseAuth();
+var fbAuth;
 var rectDrawer;
+var polyDrawer;
+var layerManager;
+var loggedIn = false;
 
 /* Useful static utilties for searching and using the
  * data we have
@@ -21,8 +27,13 @@ var dataUtilities = {
    * been found.
    */
   findData: function (list, val) {
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].properties && list[i].properties.name == val) return list[i];
+    var i,
+        len = list.length;
+
+    for (i = 0; i < len; i++) {
+      if (list[i].properties && list[i].properties.name === val) {
+        return list[i];
+      }
     }
 
     return null;
@@ -32,9 +43,13 @@ var dataUtilities = {
    * This will return a list of results
    */
   findDataByType: function (list, type) {
-    var results = [];
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].properties && list[i].properties.type == type) results.push(list[i]);
+    var results = [],
+        i;
+
+    for (i = 0; i < list.length; i++) {
+      if (list[i].properties && list[i].properties.type === type) {
+        results.push(list[i]);
+      }
     }
 
     return results;
@@ -44,11 +59,19 @@ var dataUtilities = {
    * to be used with as autocompletion names in the search bar
    */
   getAutoCompleteNames: function (datasets) {
-    var names = [];
-    for (var i = 0; i < datasets.length; ++i) {
-      for (var j = 0; j < datasets[i].length; ++j) {
-        if (datasets[i][j].properties && datasets[i][j].properties.name)
+    var names = [],
+        numDatasets = datasets.length,
+        datasetLen,
+        i, j;
+
+    for (i = 0; i < numDatasets; ++i) {
+
+      datasetLen = datasets[i].length;
+
+      for (j = 0; j < datasetLen; ++j) {
+        if (datasets[i][j].properties && datasets[i][j].properties.name) {
           names.push(datasets[i][j].properties.name);
+        }
       }
     }
 
@@ -72,20 +95,26 @@ function debarbariInit() {
     initializeSearch();
     initializeLayers();
 
+    // Move these if possible
+    fbAuth = new FirebaseAuth();
+    rectDrawer = new RectDrawer();
+    polyDrawer = new PolyDrawer();
+    layerManager = new LayerManager();
+
     // Register handlers
     $("#dlbutton").click(function () {
         var link = document.createElement("a");
         link.href = getData();
         link.download = "debarbari.png";
         var theEvent = document.createEvent("MouseEvent");
-        theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0,
+          false, false, false, false, 0, null);
         link.dispatchEvent(theEvent);
     });
 
-    rectDrawer = new RectDrawer();
     $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
 
-    $('#drawmode').click(startPolyMode);
+    $('#drawmode').click(polyDrawer.startPolyMode);
 
     $('#login-link').click(function () {
       showLoginForm('login');
@@ -95,11 +124,11 @@ function debarbariInit() {
     });
     $('#logout-link').click(fbAuth.logout);
 
-    $('#new-layer-button').click(addNewLayer);
-    $('#new-feature-submit').click(submitFeature);
-    $('#new-feature-discard').click(discardFeature);
+    $('#new-layer-button').click(layerManager.addNewLayer);
+    $('#new-feature-submit').click(polyDrawer.submitFeature);
+    $('#new-feature-discard').click(polyDrawer.discardFeature);
 
-    $('#clone-button').click(clonePoly2);
+    $('#clone-button').click(layerManager.clonePoly2);
 
     $('#plus-sign').click(function () {
       $('#info-modal').modal('show');
@@ -121,17 +150,19 @@ function debarbariInit() {
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
 
     // Add zoom out button
-    var MyControl = L.Control.extend({
+    var ViewAllControl = L.Control.extend({
       options: {
           position: 'topleft'
       },
 
       onAdd: function (map) {
-        // create the control container with a particular class name
+        // Create the control container with a particular class name
         var container = L.DomUtil.create('div', 'leaflet-bar');
 
         var link = L.DomUtil.create('a', '', container);
         link.href = "#";
+
+        // Add a click handler
         $(link).click(function() {
           map.setZoom(1);
         });
@@ -145,7 +176,7 @@ function debarbariInit() {
       }
     });
 
-    map.addControl(new MyControl());
+    map.addControl(new ViewAllControl());
   });
 }
 
@@ -168,9 +199,9 @@ function initializeLayers() {
 
     if (data.parent) {
       var strippedParentName = data.parent.replace(/\s/g, '');
-      if ($('#'+strippedParentName+'-menu').length == 0) {
+      if ($('#'+strippedParentName+'-menu').length === 0) {
         var newGroup = ' <li class="dropdown-submenu"><a href="#">'+data.parent+'</a><ul id="'+strippedParentName+'-menu" class="dropdown-menu"></ul></li>';
-        $('#new-layer-parent-other').before('<option value="'+data.parent+'">'+data.parent+'</option>')
+        $('#new-layer-parent-other').before('<option value="'+data.parent+'">'+data.parent+'</option>');
 
         if (loggedIn) {
           $('#new-layer-menu').before(newGroup);
@@ -190,7 +221,7 @@ function initializeLayers() {
       }
     }
 
-    $('#' + data.id + '-layer').click(toggleLayer.bind(this, data.id, data.color));
+    $('#' + data.id + '-layer').click(layerManager.toggleLayer.bind(this, data.id, data.color));
     $('.layers-select').append('<option value="'+data.id+'">'+data.name+'</option>');
   });
 }
@@ -237,142 +268,161 @@ function downloadSection(x, y, width, height) {
   link.dispatchEvent(theEvent);
 }
 
-function addRect(x, y, width, height) {
-  var mapBounds = map.getBounds();
+// Login form
+function showLoginForm(type) {
+  var callback;
+  if (type === "login") {
+    callback = fbAuth.login;
+  }
+  else {
+    alert("Not working yet. Check back soon!");
+    return;
 
-  var mapWidth = (mapBounds.getEast() - mapBounds.getWest()) * (width / window.innerWidth);
-  var mapHeight = (mapBounds.getNorth() - mapBounds.getSouth()) * (height / window.innerHeight);
+    //Uncomment this when it's needed:
+    //callback = fbAuth.signup;
+  }
 
-  var mapLng = ((mapBounds.getEast() - mapBounds.getWest()) * (x / window.innerWidth)) + mapBounds.getWest();
-  var mapLat = ((mapBounds.getNorth() - mapBounds.getSouth()) * (y / window.innerHeight)) + mapBounds.getSouth();
+  $('#password').on('keyup', function(e) {
+    if (e.keyCode === 13) {
+      callback($('#email').val(), $('#password').val());
+      $('#password').off('keyup');
+    }
+  });
 
-  var rectBounds = [[mapLat+mapHeight, mapLng], [mapLat, mapLng+mapWidth]];
-  new L.rectangle(rectBounds, {fillColor: "#ff7800", weight: 1}).addTo(map);
-  console.log(rectBounds.toString());
+  $('#login-form').css('display', 'block');
+  $('#login-text').hide();
 }
 
-// Draw poly
-var points = [],
-    markers = [],
-    newPoly = null,
-    state = "start",
-    editor,
-    polyLayer;
-function startPolyMode() { // XXX misleading function name
-  if (state == "draw") return;
 
-  // End edit mode
-  if (state == "edit") {
-    editor.disable();
-    state = "editend";
+function PolyDrawer() {
+  var points = [],
+      markers = [],
+      newPoly = null,
+      state = "start",
+      editor,
+      polyLayer;
 
-    $('#new-feature-name').val(selectedData.properties.name);
-    $('#new-feature-type').val(selectedData.properties.type);
-    $('#new-feature-link').val(selectedData.properties.link);
+  this.startPolyMode = function () { // XXX misleading function name
+    if (state === "draw") return;
 
-    $('#new-feature').modal('show');
-    $('#drawmode').removeClass('active');
-    return;
-  }
+    // End edit mode
+    if (state === "edit") {
+      editor.disable();
+      state = "editend";
 
-  // XXX HACK ALERT
-  // Check if a feature is selected. This will unselect it.
-  var layerCount = Object.keys(map._layers).length;
-  map.closePopup();
-  var newLayerCount = Object.keys(map._layers).length;
-  var objectSelected = layerCount > newLayerCount;
+      $('#new-feature-name').val(selectedData.properties.name);
+      $('#new-feature-type').val(selectedData.properties.type);
+      $('#new-feature-link').val(selectedData.properties.link);
 
-  if(objectSelected) { // If an object is selected, edit it
-    // selectedPoly in the poly click handler
-    polyLayer = selectedPoly;
-    editor = new L.Edit.Poly(selectedPoly);
-    editor.enable();
-    state = "edit";
-  }
-
-  else { // Draw a new polygon
-    map.once('draw:created', function (e) {
-      polyLayer = e.layer;
       $('#new-feature').modal('show');
       $('#drawmode').removeClass('active');
+      return;
+    }
+
+    // XXX HACK ALERT
+    // Check if a feature is selected. This will unselect it.
+    var layerCount = Object.keys(map._layers).length;
+    map.closePopup();
+    var newLayerCount = Object.keys(map._layers).length;
+    var objectSelected = layerCount > newLayerCount;
+
+    if(objectSelected) { // If an object is selected, edit it
+      // selectedPoly in the poly click handler
+      polyLayer = selectedPoly;
+      editor = new L.Edit.Poly(selectedPoly);
+      editor.enable();
+      state = "edit";
+    }
+
+    else { // Draw a new polygon
+      map.once('draw:created', function (e) {
+        polyLayer = e.layer;
+        $('#new-feature').modal('show');
+        $('#drawmode').removeClass('active');
+        state = "start";
+      });
+
+      // Start the Leaflet.Draw plugin
+      var circleIcon = new L.Icon({
+        iconUrl: "img/circle.png",
+        iconSize: [8,8]
+      });
+      new L.Draw.Polygon(map, {icon: circleIcon}).enable();
+      state = "draw";
+    }
+
+    // Update button style
+    $('#drawmode').addClass('active');
+  };
+
+  this.submitFeature = function () {
+    var name = $('#new-feature-name').val();
+    var type = $('#new-feature-type').val();
+    var link = $('#new-feature-link').val();
+
+    // XXX fix name
+    if (!name) return;
+
+    // If the feature already exists, update it
+    var feature;
+    if (state === "editend") {
+      feature = selectedData;
       state = "start";
-    });
-
-    // Start the Leaflet.Draw plugin
-    var circleIcon = new L.Icon({
-      iconUrl: "img/circle.png",
-      iconSize: [8,8]
-    });
-    new L.Draw.Polygon(map, {icon: circleIcon}).enable();
-    state = "draw";
-  }
-
-  // Update button style
-  $('#drawmode').addClass('active');
-}
-
-function submitFeature() {
-  var name = $('#new-feature-name').val();
-  var type = $('#new-feature-type').val();
-  var link = $('#new-feature-link').val();
-
-  // XXX fix name
-  if (!name) return;
-
-  // If the feature already exists, update it
-  var feature;
-  if (state == "editend") {
-    feature = selectedData;
-    state = "start";
-  }
-  else {
-    feature = dataUtilities.findData(DATA, name);
-  }
-  if (feature) {
-    feature.properties.name = name;
-    feature.geometry = polyLayer.toGeoJSON().geometry;
-    feature.properties.type = type;
-    feature.properties.link = link;
-    fb.child('vpc/features').set(DATA);
-  }
-  else {
-    var newFeature = {
-      type: "Feature",
-      geometry: polyLayer.toGeoJSON().geometry,
-      properties: {
-        name: name,
-        type: type,
-        link: link,
-        zoom: map.getZoom(),
-        center: {
-          lat: polyLayer.getBounds().getCenter().lat,
-          lng: polyLayer.getBounds().getCenter().lng
+    }
+    else {
+      feature = dataUtilities.findData(DATA, name);
+    }
+    if (feature) {
+      feature.properties.name = name;
+      feature.geometry = polyLayer.toGeoJSON().geometry;
+      feature.properties.type = type;
+      feature.properties.link = link;
+      fb.child('vpc/features').set(DATA);
+    }
+    else {
+      var newFeature = {
+        type: "Feature",
+        geometry: polyLayer.toGeoJSON().geometry,
+        properties: {
+          name: name,
+          type: type,
+          link: link,
+          zoom: map.getZoom(),
+          center: {
+            lat: polyLayer.getBounds().getCenter().lat,
+            lng: polyLayer.getBounds().getCenter().lng
+          }
         }
-      }
-    };
-    fb.child('vpc/features').push(newFeature);
-  }
+      };
+      fb.child('vpc/features').push(newFeature);
+    }
 
-  $('#new-feature').modal('hide');
+    $('#new-feature').modal('hide');
+  };
+
+  this.discardFeature = function () {
+    if (state === "editend") { // If data exists (editing), delete it
+      DATA.splice(DATA.indexOf(selectedData), 1);
+      fb.child('vpc/features').set(DATA);
+    }
+
+    $('#new-feature').modal('hide');
+  };
 }
 
-function discardFeature() {
-  if (state == "editend") { // If data exists (editing), delete it
-    DATA.splice(DATA.indexOf(selectedData), 1);
-    fb.child('vpc/features').set(DATA);
-  }
-
-  $('#new-feature').modal('hide');
-}
-
-// Download rect
-function RectDrawer() {
+/* Code for handling drawing the rectangle when downloading a segment of
+ * the map
+ */
+function RectDrawer () {
   var rectX, rectY,
       latlngStart, latlngEnd;
 
+  /* Called when the rectangle is finished being drawn,
+   * ie. when the user stops holding the mouse button
+   */
   this.endRect = function (callback, event) {
-    var x = $(".rect").css("left").slice(0, -2);;
-    var y = $(".rect").css("top").slice(0, -2);;
+    var x = $(".rect").css("left").slice(0, -2);
+    var y = $(".rect").css("top").slice(0, -2);
     var width = $(".rect").css("width").slice(0, -2);
     var height = $(".rect").css("height").slice(0, -2);
 
@@ -381,28 +431,43 @@ function RectDrawer() {
 
     $('#select').removeClass('active');
     callback(x, y, width, height);
-  }
+  };
 
+  /* Called when the user begins drawing the rectangle,
+   * ie. when the left mouse button is depressed.
+   */
   this.startRect = function (event) {
     $(".rect-canvas").append('<div class="rect"></div>');
     rectX = event.clientX;
     rectY = event.clientY;
     $(".rect").css({ top: rectY, left: rectX });
     $(".rect-canvas").mousemove(this.updateRect);
-  }
+  };
 
+  /* Initialize the rectangle drawer
+   * This takes a callback saying what should be called when the user
+   * has finished drawing the rectangle
+   */
   this.initialize = function (callback) {
     $("body").append('<div class="rect-canvas"></div>');
     $(".rect-canvas").mousedown(this.startRect.bind(this));
     $(".rect-canvas").mouseup(this.endRect.bind(this, callback));
-
     $('#select').addClass('active');
-  }
+  };
 
+  /* Called as the mouse is being dragged, this updates the visible rectangle
+   * that appears on the map
+   */
   this.updateRect = function (event) {
     var xDiff = event.clientX - rectX,
         yDiff = event.clientY - rectY,
         newX, newY, newWidth, newHeight;
+
+    // Rectangles need to be specified with an (x,y) top left
+    // coordinate, and a width and lenfth. If the user move to the right or
+    // down, the width and height are increased respectively. If we move
+    // left or up _past_ the current top left (x,y) location. We must move
+    // that location up or back.
 
     if (xDiff < 0) {
       newWidth = Math.abs(xDiff);
@@ -422,112 +487,124 @@ function RectDrawer() {
       newHeight = yDiff;
     }
 
-    $(".rect").css({ left: newX+"px", top: newY+"px", width: newWidth+"px", height: newHeight+"px"});
-  }
+    // Update the DOM object
+    $(".rect").css({
+      left: newX+"px",
+      top: newY+"px",
+      width: newWidth+"px",
+      height: newHeight+"px"});
+  };
 }
 
-// Layers
-function addNewLayer() {
-  var name = $('#new-layer-name').val();
-  var id = $('#new-layer-id').val();
-  var color = $('#new-layer-color').val();
-  var parent = $('#new-layer-parent').val();
+// Handle things related to the overlays
+function LayerManager() {
+  var polyState = {},
+      selectedPoly = null,
+      selectedData = null;
 
-  if (parent == "Other") {
-    parent = $('#new-layer-new-parent').val();
-  }
+  this.addNewLayer = function () {
+    // Read values from the form
+    var name = $('#new-layer-name').val();
+    var id = $('#new-layer-id').val();
+    var color = $('#new-layer-color').val();
+    var parent = $('#new-layer-parent').val();
 
-  // Fail silently if fields empty for now
-  if (!(name || id || color)) {
-    return;
-  }
+    if (parent === "Other") {
+      parent = $('#new-layer-new-parent').val();
+    }
 
-  // TODO generalize for any account
-  fb.child('vpc/layers').push({name: name, id: id, color: color, parent: parent});
-  $('#new-layer').modal('hide');
-}
+    // Fail silently if fields empty for now
+    if (!(name || id || color)) {
+      return;
+    }
 
-function clonePoly() {
-  $('#clone-layer').modal('show');
-}
+    // TODO generalize for any account
+    fb.child('vpc/layers').push({name: name, id: id, color: color, parent: parent});
+    $('#new-layer').modal('hide');
+  };
 
-function clonePoly2() {
-  var newData = $.extend(true, {}, selectedData); // clone the data
-  newData.properties.type = $('#clone-layer-type').val();
-  fb.child('vpc/features').push(newData);
+  this.clonePoly = function () {
+    $('#clone-layer').modal('show');
+  };
 
-  $('#clone-layer').modal('hide');
-  map.closePopup();
-}
+  this.clonePoly2 = function () {
+    var newData = $.extend(true, {}, selectedData); // clone the data
+    newData.properties.type = $('#clone-layer-type').val();
+    fb.child('vpc/features').push(newData);
 
-var polyState = {};
-var selectedPoly = null;
-var selectedData = null;
-function toggleLayer(type, color) {
-  if (!polyState[type]) {
-    polyState[type] = [];
-    for (var i = 0; i < DATA.length; ++i) {
-      if (DATA[i].properties.type == type && DATA[i].geometry) {
-        var points = dataUtilities.geoJSONToLeaflet(DATA[i].geometry.coordinates[0]);
-        var newPoly = L.polygon(points, {color: color, weight: 2});
+    $('#clone-layer').modal('hide');
+    map.closePopup();
+  };
 
-        // Clicking on a polygon will bring up a pop up
-        newPoly.on('click', (function (data, poly){
-          var content = '<b class="popup">'+data.properties.name+'</b>';
-          if (data.properties.link) {
-            content = '<a href="' + data.properties.link + '" target="blank_">' + content + '</a>';
-          }
-          if (loggedIn) {
-            content += '<br /><a class="clone" href="#" onclick="clonePoly()">Clone</a>';
-          }
-          L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
-          selectedPoly = poly;
-          selectedData = data;
-        }).bind(this, DATA[i], newPoly));
+  this.toggleLayer = function (type, color) {
+    var i,
+        points,
+        newPoly,
+        activeLandmarks;
 
-        // Double clicking a polygon will center the landmark
-        // XXX Doesn't work?
-        newPoly.on('dblclick', (function (loc) {
-          map.setView(loc).setZoom(8);
-        }).bind(this, DATA[i].properties.center));
+    if (!polyState[type]) {
+      polyState[type] = [];
+      for (i = 0; i < DATA.length; ++i) {
+        if (DATA[i].properties.type == type && DATA[i].geometry) {
+          points = dataUtilities.geoJSONToLeaflet(DATA[i].geometry.coordinates[0]);
+          newPoly = L.polygon(points, {color: color, weight: 2});
 
-        newPoly.addTo(map);
-        polyState[type].push(newPoly);
+          // Clicking on a polygon will bring up a pop up
+          newPoly.on('click', (function (data, poly){
+            var content = '<b class="popup">'+data.properties.name+'</b>';
+            if (data.properties.link) {
+              content = '<a href="' + data.properties.link + '" target="blank_">' + content + '</a>';
+            }
+            if (loggedIn) {
+              content += '<br /><a class="clone" href="#" onclick="layerManager.clonePoly()">Clone</a>';
+            }
+            L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
+            selectedPoly = poly;
+            selectedData = data;
+          }).bind(this, DATA[i], newPoly));
+
+          // Double clicking a polygon will center the landmark
+          // XXX Doesn't work?
+          newPoly.on('dblclick', (function (loc) {
+            map.setView(loc).setZoom(8);
+          }).bind(this, DATA[i].properties.center));
+
+          newPoly.addTo(map);
+          polyState[type].push(newPoly);
+        }
+      }
+
+      $('#'+type+'-layer').css('font-weight', 600);
+    }
+    else {
+      for (i = 0; i < polyState[type].length; ++i) {
+        map.removeLayer(polyState[type][i]);
+      }
+
+      $('#'+type+'-layer').css('font-weight', 400);
+
+      delete polyState[type];
+    }
+
+    // Update autocomplete based on selected layers
+    if (Object.keys(polyState).length === 0) {
+      activeLandmarks = DATA;
+    }
+    else {
+      activeLandmarks = [];
+      for (var activeType in polyState) {
+        activeLandmarks = activeLandmarks.concat(dataUtilities.findDataByType(DATA, activeType));
       }
     }
 
-    $('#'+type+'-layer').css('font-weight', 600);
-  }
-  else {
-    for (var i = 0; i < polyState[type].length; ++i) {
-      map.removeLayer(polyState[type][i]);
-    }
-
-    $('#'+type+'-layer').css('font-weight', 400);
-
-    delete polyState[type];
-  }
-
-  // Update autocomplete based on selected layers
-  var activeLandmarks;
-  if (Object.keys(polyState).length == 0) {
-    activeLandmarks = DATA;
-  }
-  else {
-    activeLandmarks = [];
-    for (var activeType in polyState) {
-      activeLandmarks = activeLandmarks.concat(dataUtilities.findDataByType(DATA, activeType));
-    }
-  }
-
-  $('.search').autocomplete({ source: dataUtilities.getAutoCompleteNames([activeLandmarks]) });
+    $('.search').autocomplete({ source: dataUtilities.getAutoCompleteNames([activeLandmarks]) });
+  };
 }
 
-var loggedIn = false;
-
-// Firebase auth
-
-function firebaseAuth () {
+/* Firebase authentication stuff
+ * Handles logging in and creating account
+ */
+function FirebaseAuth () {
   var auth;
 
   this.userCallback = function (error, user) {
@@ -562,8 +639,9 @@ function firebaseAuth () {
       password: password,
       rememberMe: true
     }, function(error, user) {
-      if (error)
+      if (error) {
         console.log(error);
+      }
     });
   };
 
@@ -583,27 +661,4 @@ function firebaseAuth () {
   auth = new FirebaseSimpleLogin(fb, this.userCallback);
 
   return this;
-}
-
-// Login form
-function showLoginForm(type) {
-  var callback;
-  if (type == "login") {
-    callback = fbAuth.login;
-  }
-  else {
-    alert("Not working yet. Check back soon!");
-    return;
-    callback = fbAuth.signup;
-  }
-
-  $('#password').on('keyup', function(e) {
-    if (e.keyCode == 13) {
-      callback($('#email').val(), $('#password').val());
-      $('#password').off('keyup');
-    }
-  });
-
-  $('#login-form').css('display', 'block');
-  $('#login-text').hide();
 }
