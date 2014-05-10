@@ -1,46 +1,69 @@
-var map;
-var DATA = [];
-var fb = new Firebase('https://vpc.firebaseio.com/debarbari');
+// Turn on strict mode
+"use strict";
 
-// Demolished Church of the Templari is aka Santa Maria dell'Ascensione
-// Demolished Convent of the Celestia is aka Santa Maria de la Celestia
-// Demolished Church of Santa Maria dei Servi not really demolished?
-// Demolished Church of San Tomà not really demolished?
-// Demolished Convent of the Vergini ??
-// Demolished Church of San Nicoló di Castello ?
-// Demolished Church of San Bartolomeo di Castello ?
-// ["Convent of the Crociferi????????", [-67.08668927672144, 22971.533203125], 7]
+var map,
+    DATA = [],
+    Firebase,
+    fb = new Firebase('https://vpc.firebaseio.com/debarbari');
 
 
-// TODO: Combine these functions into a good search function (or research fb more)
-function findData(list, val) {
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].properties && list[i].properties.name == val) return list[i];
-  }
+// Remove if possible!!!!
+var fbAuth = new firebaseAuth();
+var rectDrawer;
 
-  return null;
-}
+/* Useful static utilties for searching and using the
+ * data we have
+ */
+var dataUtilities = {
 
-function findDataByType(list, type) {
-  var results = [];
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].properties && list[i].properties.type == type) results.push(list[i]);
-  }
-
-  return results;
-}
-
-function getAutoCompleteNames(datasets) {
-  var names = [];
-  for (var i = 0; i < datasets.length; ++i) {
-    for (var j = 0; j < datasets[i].length; ++j) {
-      if (datasets[i][j].properties && datasets[i][j].properties.name)
-        names.push(datasets[i][j].properties.name);
+  /* Searches the given list of landmarks for one with the given name.
+   * This will return the first valid result found, or null if nothing has
+   * been found.
+   */
+  findData: function (list, val) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].properties && list[i].properties.name == val) return list[i];
     }
-  }
 
-  return names;
-}
+    return null;
+  },
+
+  /* Searches the given list of landmarks for ones with the given type.
+   * This will return a list of results
+   */
+  findDataByType: function (list, type) {
+    var results = [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].properties && list[i].properties.type == type) results.push(list[i]);
+    }
+
+    return results;
+  },
+
+  /* Returns a list of lists of landmarks, creates a list of names
+   * to be used with as autocompletion names in the search bar
+   */
+  getAutoCompleteNames: function (datasets) {
+    var names = [];
+    for (var i = 0; i < datasets.length; ++i) {
+      for (var j = 0; j < datasets[i].length; ++j) {
+        if (datasets[i][j].properties && datasets[i][j].properties.name)
+          names.push(datasets[i][j].properties.name);
+      }
+    }
+
+    return names;
+  },
+
+  /* GetJSON uses x/y coordinates, whereas
+   * Leaflet uses Lat/Lng
+   */
+  geoJSONToLeaflet: function (points) {
+    return points.map(function (e) {
+      return [e[1], e[0]];
+    });
+  }
+};
 
 function debarbariInit() {
   // jQuery init
@@ -48,19 +71,18 @@ function debarbariInit() {
     // Get data from Firebase
     initializeSearch();
     initializeLayers();
-    
+
     // Register handlers
-    $("#dlbutton").click(function () { 
+    $("#dlbutton").click(function () {
         var link = document.createElement("a");
         link.href = getData();
         link.download = "debarbari.png";
         var theEvent = document.createEvent("MouseEvent");
         theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
         link.dispatchEvent(theEvent);
-        delete link;
     });
 
-    rectDrawer = new RectDrawer;
+    rectDrawer = new RectDrawer();
     $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
 
     $('#drawmode').click(startPolyMode);
@@ -71,7 +93,7 @@ function debarbariInit() {
     $('#signup-link').click(function () {
       showLoginForm('signup');
     });
-    $('#logout-link').click(fbLogout);
+    $('#logout-link').click(fbAuth.logout);
 
     $('#new-layer-button').click(addNewLayer);
     $('#new-feature-submit').click(submitFeature);
@@ -93,7 +115,7 @@ function debarbariInit() {
     // Initialize leaflet map
     map = L.map('map', { center: [-73, 294/*22973.5*/], zoom: 3, attributionControl: false });
     new L.Control.Attribution({ prefix: false, position: 'bottomleft' }).addAttribution('<a href="http://veniceprojectcenter.org"><img src="img/vpc-small.png"></img></a>').addTo(map);
-    L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
+    L.tileLayer('http://debarbari.veniceprojectcenter.org/tiles2/{z}/{x}/{y}.png', {minZoom: 2, maxZoom: 8, tms: true}).addTo(map);
 
     var tms2 = L.tileLayer('tiles2/{z}/{x}/{y}.png', {minZoom: 1, maxZoom: 1, tms: true});
     var miniMap = new L.Control.MiniMap(tms2, { toggleDisplay: true }).addTo(map);
@@ -130,11 +152,11 @@ function debarbariInit() {
 function initializeSearch() {
   fb.child('vpc/features').on('child_added', function (snapshot) {
     DATA.push(snapshot.val());
-    var names = getAutoCompleteNames([DATA]);
+    var names = dataUtilities.getAutoCompleteNames([DATA]);
     $(".search").autocomplete({ source: names });
   });
   $(".search").on("autocompleteselect", function (event, ui) {
-    var landmark = findData(DATA, ui.item.value);
+    var landmark = dataUtilities.findData(DATA, ui.item.value);
     map.setView(landmark.properties.center, 8 /* LOL IGNORE ZOOM */, { animate: true });
   });
 }
@@ -159,7 +181,7 @@ function initializeLayers() {
       }
       $('#'+strippedParentName+'-menu').append(newOption);
     }
-    else {    
+    else {
       if (loggedIn) {
         $('#new-layer-menu').before(newOption);
       }
@@ -230,13 +252,12 @@ function addRect(x, y, width, height) {
 }
 
 // Draw poly
-var points = [];
-var markers = [];
-var newPoly = null;
-
-var state = "start";
-var editor;
-var polyLayer;
+var points = [],
+    markers = [],
+    newPoly = null,
+    state = "start",
+    editor,
+    polyLayer;
 function startPolyMode() { // XXX misleading function name
   if (state == "draw") return;
 
@@ -279,7 +300,7 @@ function startPolyMode() { // XXX misleading function name
 
     // Start the Leaflet.Draw plugin
     var circleIcon = new L.Icon({
-      iconUrl: "img/circle.png", 
+      iconUrl: "img/circle.png",
       iconSize: [8,8]
     });
     new L.Draw.Polygon(map, {icon: circleIcon}).enable();
@@ -305,7 +326,7 @@ function submitFeature() {
     state = "start";
   }
   else {
-    feature = findData(DATA, name);
+    feature = dataUtilities.findData(DATA, name);
   }
   if (feature) {
     feature.properties.name = name;
@@ -323,8 +344,8 @@ function submitFeature() {
         type: type,
         link: link,
         zoom: map.getZoom(),
-        center: { 
-          lat: polyLayer.getBounds().getCenter().lat, 
+        center: {
+          lat: polyLayer.getBounds().getCenter().lat,
           lng: polyLayer.getBounds().getCenter().lng
         }
       }
@@ -346,10 +367,10 @@ function discardFeature() {
 
 // Download rect
 function RectDrawer() {
-  var rectX, rectY;
-  var latlngStart, latlngEnd;
+  var rectX, rectY,
+      latlngStart, latlngEnd;
 
-  this.endRect = function(callback, event) {
+  this.endRect = function (callback, event) {
     var x = $(".rect").css("left").slice(0, -2);;
     var y = $(".rect").css("top").slice(0, -2);;
     var width = $(".rect").css("width").slice(0, -2);
@@ -362,7 +383,7 @@ function RectDrawer() {
     callback(x, y, width, height);
   }
 
-  this.startRect = function(event) {
+  this.startRect = function (event) {
     $(".rect-canvas").append('<div class="rect"></div>');
     rectX = event.clientX;
     rectY = event.clientY;
@@ -370,7 +391,7 @@ function RectDrawer() {
     $(".rect-canvas").mousemove(this.updateRect);
   }
 
-  this.initialize = function(callback) {
+  this.initialize = function (callback) {
     $("body").append('<div class="rect-canvas"></div>');
     $(".rect-canvas").mousedown(this.startRect.bind(this));
     $(".rect-canvas").mouseup(this.endRect.bind(this, callback));
@@ -378,11 +399,10 @@ function RectDrawer() {
     $('#select').addClass('active');
   }
 
-  this.updateRect = function(event) {
-    var xDiff = event.clientX - rectX;
-    var yDiff = event.clientY - rectY;
-
-    var newX, newY, newWidth, newHeight;
+  this.updateRect = function (event) {
+    var xDiff = event.clientX - rectX,
+        yDiff = event.clientY - rectY,
+        newX, newY, newWidth, newHeight;
 
     if (xDiff < 0) {
       newWidth = Math.abs(xDiff);
@@ -448,7 +468,7 @@ function toggleLayer(type, color) {
     polyState[type] = [];
     for (var i = 0; i < DATA.length; ++i) {
       if (DATA[i].properties.type == type && DATA[i].geometry) {
-        var points = geoJSONToLeaflet(DATA[i].geometry.coordinates[0]);
+        var points = dataUtilities.geoJSONToLeaflet(DATA[i].geometry.coordinates[0]);
         var newPoly = L.polygon(points, {color: color, weight: 2});
 
         // Clicking on a polygon will bring up a pop up
@@ -496,72 +516,85 @@ function toggleLayer(type, color) {
   else {
     activeLandmarks = [];
     for (var activeType in polyState) {
-      activeLandmarks = activeLandmarks.concat(findDataByType(DATA, activeType));
+      activeLandmarks = activeLandmarks.concat(dataUtilities.findDataByType(DATA, activeType));
     }
   }
-    
-  $('.search').autocomplete({ source: getAutoCompleteNames([activeLandmarks]) });
+
+  $('.search').autocomplete({ source: dataUtilities.getAutoCompleteNames([activeLandmarks]) });
 }
 
-// Firebase auth
-var auth = new FirebaseSimpleLogin(fb, fbUserCallback);
 var loggedIn = false;
 
-function fbUserCallback(error, user) {
-  if (error) { /* Error */
-    console.log(error);
-    loggedIn = false;
-    $('#login-text').show();
-    $('#loggedin-text').hide();
-    $('#login-form').hide();
-  }
-  else if (user) { /* Logged in */
-    loggedIn = true;
-    $('#login-form').hide();
-    $('#login-text').hide();
-    $('#loggedin-username').text(user.email);
-    $('#loggedin-text').show();
-    $('#drawmode').css('display', 'inline');
-    $('.layers-menu').append('<li id="new-layer-menu" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>');
-  } else { /* Logged out */
-    loggedIn = false;
-    $('#login-text').show();
-    $('#loggedin-text').hide();
-    $('#login-form').hide();
-    $('#drawmode').css('display', 'none');
-    $('#new-layer-menu').remove();
-  }
-}
+// Firebase auth
 
-function fbLogout() {
-  auth.logout();
-}
+function firebaseAuth () {
+  var auth;
 
-function fbLogin(email, password) {
-  auth.login('password', {
-    email: email,
-    password: password,
-    rememberMe: true
-  }, function(error, user) { 
-    if (error)
+  this.userCallback = function (error, user) {
+    if (error) { /* Error */
       console.log(error);
-  });
-}
+      loggedIn = false;
+      $('#login-text').show();
+      $('#loggedin-text').hide();
+      $('#login-form').hide();
+    }
+    else if (user) { /* Logged in */
+      loggedIn = true;
+      $('#login-form').hide();
+      $('#login-text').hide();
+      $('#loggedin-username').text(user.email);
+      $('#loggedin-text').show();
+      $('#drawmode').css('display', 'inline');
+      $('.layers-menu').append('<li id="new-layer-menu" role="presentation"><a role="menu-item" href="#" data-toggle="modal" data-target="#new-layer">New Layer</a></li>');
+    } else { /* Logged out */
+      loggedIn = false;
+      $('#login-text').show();
+      $('#loggedin-text').hide();
+      $('#login-form').hide();
+      $('#drawmode').css('display', 'none');
+      $('#new-layer-menu').remove();
+    }
+  };
 
-function fbSignup(email, password) {
+  this.login = function (email, password) {
+    auth.login('password', {
+      email: email,
+      password: password,
+      rememberMe: true
+    }, function(error, user) {
+      if (error)
+        console.log(error);
+    });
+  };
 
+  this.logout = function () {
+    auth.logout();
+  };
+
+  this.signup = function (email, password) {
+    // Not implemented for now.
+    // Firebase has a very simple easy API for signing up.
+
+    // This should probably log the user in after the account
+    // is created.
+  };
+
+  // Create the firebase login object
+  auth = new FirebaseSimpleLogin(fb, this.userCallback);
+
+  return this;
 }
 
 // Login form
 function showLoginForm(type) {
   var callback;
   if (type == "login") {
-    callback = fbLogin;
+    callback = fbAuth.login;
   }
   else {
     alert("Not working yet. Check back soon!");
-    return; //
-    callback = fbSignup;
+    return;
+    callback = fbAuth.signup;
   }
 
   $('#password').on('keyup', function(e) {
@@ -573,15 +606,4 @@ function showLoginForm(type) {
 
   $('#login-form').css('display', 'block');
   $('#login-text').hide();
-}
-
-// UTIL
-
-/* GetJSON uses x/y coordinates, whereas
- * Leaflet uses Lat/Lng
- */
-function geoJSONToLeaflet(points) {
-  return points.map(function (e) {
-    return [e[1], e[0]];
-  });
 }
