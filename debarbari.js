@@ -130,7 +130,7 @@ function debarbariInit() {
     $('#new-feature-submit').click(polyDrawer.submitFeature);
     $('#new-feature-discard').click(polyDrawer.discardFeature);
 
-    $('#clone-button').click(layerManager.clonePoly2);
+    $('#clone-button').click(layerManager.clonePoly);
 
     $('#plus-sign').click(function () {
       $('#info-modal').modal('show');
@@ -558,13 +558,13 @@ function LayerManager() {
 
   /* Shows the polygon cloning modal
    */
-  this.clonePoly = function () {
+  this.cloneModal = function () {
     $('#clone-layer').modal('show');
   };
 
   /* Clones the feature to a new layer
    */
-  this.clonePoly2 = function () {
+  this.clonePoly = function () {
     var newData = $.extend(true, {}, selectedData); // clone the data
     newData.properties.type = $('#clone-layer-type').val();
     fb.child('vpc/features').push(newData);
@@ -597,7 +597,7 @@ function LayerManager() {
               content = '<a href="' + data.properties.link + '" target="blank_">' + content + '</a>';
             }
             if (loggedIn) {
-              content += '<br /><a class="clone" href="#" onclick="layerManager.clonePoly()">Clone</a>';
+              content += '<br /><a class="clone" href="#" onclick="layerManager.cloneModal()">Clone</a>';
             }
             L.popup().setLatLng(data.properties.center).setContent(content).openOn(map);
             selectedPoly = poly;
