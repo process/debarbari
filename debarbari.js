@@ -1,9 +1,6 @@
 // Turn on strict mode
 "use strict";
 
-
-/*global $:false, L:false, window:false, document:false */
-
 var map,
     DATA = [],
     Firebase,
@@ -15,6 +12,7 @@ var fbAuth;
 var rectDrawer;
 var polyDrawer;
 var layerManager;
+var downloader;
 var loggedIn = false;
 
 /* Useful static utilties for searching and using the
@@ -88,9 +86,12 @@ var dataUtilities = {
   }
 };
 
+/* Initialize everything needed. Create necessary objects
+ * and setup the map
+ */
 function debarbariInit() {
   // jQuery init
-  $(function() {
+  $(document).ready(function() {
     // Get data from Firebase
     initializeSearch();
     initializeLayers();
@@ -100,11 +101,12 @@ function debarbariInit() {
     rectDrawer = new RectDrawer();
     polyDrawer = new PolyDrawer();
     layerManager = new LayerManager();
+    downloader = new Downloader();
 
     // Register handlers
     $("#dlbutton").click(function () {
         var link = document.createElement("a");
-        link.href = getData();
+        link.href = downloader.getData();
         link.download = "debarbari.png";
         var theEvent = document.createEvent("MouseEvent");
         theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0,
@@ -112,7 +114,7 @@ function debarbariInit() {
         link.dispatchEvent(theEvent);
     });
 
-    $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloadSection));
+    $("#select").click(rectDrawer.initialize.bind(rectDrawer, downloader.downloadSection));
 
     $('#drawmode').click(polyDrawer.startPolyMode);
 
@@ -180,6 +182,8 @@ function debarbariInit() {
   });
 }
 
+/* Load up the autocomplete bar with all the names
+ */
 function initializeSearch() {
   fb.child('vpc/features').on('child_added', function (snapshot) {
     DATA.push(snapshot.val());
@@ -192,6 +196,8 @@ function initializeSearch() {
   });
 }
 
+/* Create a menu item for each layer
+ */
 function initializeLayers() {
   fb.child('vpc/layers').on('child_added', function (snapshot) {
     var data = snapshot.val();
@@ -226,49 +232,8 @@ function initializeLayers() {
   });
 }
 
-function getCanvasFromMap() {
-  var c = document.createElement("canvas");
-  c.width = $("#map").width();
-  c.height = $("#map").height();
-  var canvas = c.getContext("2d");
-
-  var imgs = $(".leaflet-tile-container.leaflet-zoom-animated").children();
-
-  for (var i = 0; i < imgs.length; ++i) {
-    var img = imgs[i];
-    var rect = img.getBoundingClientRect();
-
-    canvas.drawImage(img, rect.left, rect.top);
-  }
-
-  return c;
-}
-
-function getData() {
-  var c = getCanvasFromMap();
-
-  var img_url = c.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
-  return img_url;
-}
-
-function downloadSection(x, y, width, height) {
-  var canvas = getCanvasFromMap();
-  var ctx = canvas.getContext('2d');
-
-  var selection = ctx.getImageData(x, y, width, height);
-  canvas.width = width;
-  canvas.height = height;
-  ctx.putImageData(selection, 0, 0);
-
-  var link = document.createElement("a");
-  link.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
-  link.download = "debarbari.png";
-  var theEvent = document.createEvent("MouseEvent");
-  theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-  link.dispatchEvent(theEvent);
-}
-
-// Login form
+/* Show the login form
+ */
 function showLoginForm(type) {
   var callback;
   if (type === "login") {
@@ -293,7 +258,62 @@ function showLoginForm(type) {
   $('#login-text').hide();
 }
 
+/* Holds functions related to downloading images from the map
+ */
+function Downloader () {
+  /* Creates a canvase element from the the map
+   */
+  function getCanvasFromMap() {
+    var c = document.createElement("canvas");
+    c.width = $("#map").width();
+    c.height = $("#map").height();
+    var canvas = c.getContext("2d");
 
+    var imgs = $(".leaflet-tile-container.leaflet-zoom-animated").children();
+
+    for (var i = 0; i < imgs.length; ++i) {
+      var img = imgs[i];
+      var rect = img.getBoundingClientRect();
+
+      canvas.drawImage(img, rect.left, rect.top);
+    }
+
+    return c;
+  };
+
+  /* Returns an image URL from data on the map
+   */
+  this.getData = function () {
+    var c = this.getCanvasFromMap();
+
+    var img_url = c.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+    return img_url;
+
+  };
+
+  /* Downloads a portion of the map specified by the arguments
+   */
+  this.downloadSection = function (x, y, width, height) {
+    var canvas = getCanvasFromMap();
+    var ctx = canvas.getContext('2d');
+
+    var selection = ctx.getImageData(x, y, width, height);
+    canvas.width = width;
+    canvas.height = height;
+    ctx.putImageData(selection, 0, 0);
+
+    var link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+    link.download = "debarbari.png";
+    var theEvent = document.createEvent("MouseEvent");
+    theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    link.dispatchEvent(theEvent);
+  };
+
+}
+
+/* Holds code for drawing new polygon features on the map
+ */
 function PolyDrawer() {
   var points = [],
       markers = [],
@@ -302,6 +322,9 @@ function PolyDrawer() {
       editor,
       polyLayer;
 
+  /* Starts the polygon drawing mode
+   * Initializes the needed components on the map
+   */
   this.startPolyMode = function () { // XXX misleading function name
     if (state === "draw") return;
 
@@ -355,6 +378,10 @@ function PolyDrawer() {
     $('#drawmode').addClass('active');
   };
 
+  /* When the feautre is ready to be submitted,
+   * call this, and we pull information from the modal
+   * and use it to populate the database.
+   */
   this.submitFeature = function () {
     var name = $('#new-feature-name').val();
     var type = $('#new-feature-type').val();
@@ -400,6 +427,9 @@ function PolyDrawer() {
     $('#new-feature').modal('hide');
   };
 
+  /* If the user chooses to discard the feature,
+   * we remove it from the database if it exists
+   */
   this.discardFeature = function () {
     if (state === "editend") { // If data exists (editing), delete it
       DATA.splice(DATA.indexOf(selectedData), 1);
@@ -502,6 +532,9 @@ function LayerManager() {
       selectedPoly = null,
       selectedData = null;
 
+  /* Add a new layer to the map.
+   * Updates the database and the layer menu
+   */
   this.addNewLayer = function () {
     // Read values from the form
     var name = $('#new-layer-name').val();
@@ -523,10 +556,14 @@ function LayerManager() {
     $('#new-layer').modal('hide');
   };
 
+  /* Shows the polygon cloning modal
+   */
   this.clonePoly = function () {
     $('#clone-layer').modal('show');
   };
 
+  /* Clones the feature to a new layer
+   */
   this.clonePoly2 = function () {
     var newData = $.extend(true, {}, selectedData); // clone the data
     newData.properties.type = $('#clone-layer-type').val();
@@ -536,6 +573,10 @@ function LayerManager() {
     map.closePopup();
   };
 
+  /* Turns a overlay layer on or off.
+   * When layers are enabled, only the enalbed layers' features
+   * appear in the search.
+   */
   this.toggleLayer = function (type, color) {
     var i,
         points,
@@ -607,6 +648,10 @@ function LayerManager() {
 function FirebaseAuth () {
   var auth;
 
+  /* Called when anything related to the state of the user occurs.
+   * This is called when the user is logged in or out, or if login
+   * fails, or if an error occurs (in which case we assume a logout).
+   */
   this.userCallback = function (error, user) {
     if (error) { /* Error */
       console.log(error);
@@ -633,6 +678,8 @@ function FirebaseAuth () {
     }
   };
 
+  /* Attempts to log in with the given email and password
+   */
   this.login = function (email, password) {
     auth.login('password', {
       email: email,
@@ -645,10 +692,15 @@ function FirebaseAuth () {
     });
   };
 
+  /* Logs the user out
+   */
   this.logout = function () {
     auth.logout();
   };
 
+  /* Signup the user using the given email and password
+   * TODO: Actually implement this, and the needed backend code
+   */
   this.signup = function (email, password) {
     // Not implemented for now.
     // Firebase has a very simple easy API for signing up.
