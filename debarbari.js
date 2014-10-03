@@ -3,7 +3,6 @@
 
 var map,
     DATA = [],
-    Firebase,
     fb = new Firebase('https://vpc.firebaseio.com/debarbari');
 
 
@@ -76,8 +75,8 @@ var dataUtilities = {
     return names;
   },
 
-  /* GetJSON uses x/y coordinates, whereas
-   * Leaflet uses Lat/Lng
+  /* Converts the coordinates from the database
+   * to a form that Leaflet understands 
    */
   geoJSONToLeaflet: function (points) {
     return points.map(function (e) {
@@ -109,6 +108,9 @@ function debarbariInit() {
         link.href = downloader.getData();
         link.download = "debarbari.png";
         var theEvent = document.createEvent("MouseEvent");
+
+        // Here we create and dispatch a "realistic" event
+        // to fool browsers' built-in popup blockers
         theEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0,
           false, false, false, false, 0, null);
         link.dispatchEvent(theEvent);
